@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Song+Myung&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Pen+Script&family=Song+Myung&display=swap">
 <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
@@ -22,22 +22,17 @@
 
   <header class="topbar" id="topbar">
     <div class="dday">
-      <span class="dday-label" id="ddayLabel">장학생 수여식까지</span>
       <span class="dday-num" id="ddayNum">D-100</span>
+      <span class="dday-time" id="ddayTime"></span>
     </div>
-    <div class="minicards" id="minicards"></div>
-    <button class="beliefs-btn" id="btnBeliefs" type="button"><img id="bbImg" src="assets/card/card_study.webp" alt=""><span>윤재의 믿음</span><b id="bbCount"></b></button>
-    <button class="notes-btn" id="btnNotes" type="button"><img src="assets/ui/ui_notebook.webp" alt=""><span>역사 노트</span></button>
+    <div class="stats" id="stats"></div>
+    <div class="money" id="money"><img src="assets/ui/icon_money.webp" alt=""><b id="moneyVal">0</b><span>전</span></div>
     <div class="gauges">
       <div class="gauge" id="gGrade"><span class="g-label">장학생</span><span class="g-track"><span class="g-fill"></span></span></div>
       <div class="gauge warn" id="gSusp"><span class="g-label">의심</span><span class="g-track"><span class="g-fill"></span></span></div>
     </div>
+    <button class="bag-btn" id="btnBag" type="button"><img src="assets/ui/icon_bag.webp" alt=""><span>가방</span></button>
   </header>
-
-  <aside class="beliefs" id="beliefs">
-    <div class="beliefs-title">윤재의 믿음</div>
-    <div class="belief-list" id="beliefList"></div>
-  </aside>
 
   <section class="dialog" id="dialog" hidden>
     <div class="nametag" id="nametag"></div>
@@ -46,17 +41,29 @@
   </section>
 
   <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
-
-  <div class="overlay beliefsall" id="beliefsall" hidden>
-    <h2>윤재의 믿음</h2>
-    <div class="ci-row" id="baRow"></div>
-    <p class="ci-foot">카드를 누르면 크게 볼 수 있어요</p>
-    <button class="btn notes-close" id="btnBeliefsClose" type="button">닫기</button>
-  </div>
-
   <div class="choices" id="choices" hidden></div>
   <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>
   <div class="toast" id="toast" hidden></div>
+
+  <!-- map: choose where to spend the time of day -->
+  <div class="mapview" id="mapview" hidden>
+    <div class="map-head"><b id="mapTime"></b><span id="mapLeft"></span></div>
+    <div class="map-box" id="mapBox">
+      <img class="map-img" src="assets/bg/map_gwangju.webp" alt="">
+      <div class="map-spots" id="mapSpots"></div>
+    </div>
+  </div>
+
+  <!-- market mini-game -->
+  <div class="overlay carry" id="carry" hidden>
+    <div class="cr-head"><b>짐 나르기</b><span id="crInfo"></span></div>
+    <div class="cr-field" id="crField">
+      <img class="cr-sack" id="crSack" src="assets/minigame/mg_sack.webp" alt="">
+      <div class="cr-stack" id="crStack"></div>
+      <img class="cr-jige" src="assets/minigame/mg_jige.webp" alt="">
+    </div>
+    <p class="cr-msg" id="crMsg">가마니가 지게 위에 왔을 때 화면을 눌러 내려놓으세요</p>
+  </div>
 
   <div class="overlay slide" id="slide" hidden>
     <img class="sl-bg" id="slBg" alt="">
@@ -70,25 +77,22 @@
     <div class="note-panel">
       <img class="note-img" id="nsImg" alt="">
       <div class="note-body">
-        <p class="note-kicker">알고 가기</p>
+        <p class="note-kicker" id="nsKicker">알고 가기</p>
         <h2 class="note-title" id="nsTitle"></h2>
         <p class="note-text" id="nsText"></p>
-        <p class="note-saved">역사 노트에 저장했어요. 위쪽 ‘역사 노트’에서 다시 볼 수 있어요.</p>
+        <p class="note-saved" id="nsSaved"></p>
       </div>
     </div>
     <p class="tap-hint">화면을 눌러 계속</p>
   </div>
 
-  <div class="overlay notes" id="notes" hidden>
-    <div class="note-panel notes-panel">
-      <div class="notes-list" id="notesList"></div>
-      <div class="note-body">
-        <img class="note-img small" id="nlImg" alt="">
-        <h2 class="note-title" id="nlTitle"></h2>
-        <p class="note-text" id="nlText"></p>
-      </div>
+  <!-- bag: status, items, to-do, beliefs, history notes -->
+  <div class="overlay bag" id="bag" hidden>
+    <div class="note-panel bag-panel">
+      <nav class="bag-tabs" id="bagTabs"></nav>
+      <div class="bag-body" id="bagBody"></div>
     </div>
-    <button class="btn notes-close" id="btnNotesClose" type="button">닫기</button>
+    <button class="btn bag-close" id="btnBagClose" type="button">닫기</button>
   </div>
 
   <div class="overlay daycard" id="daycard" hidden>
@@ -160,7 +164,7 @@
         <span>장학생은 어떤 기준으로 뽑혔나요? 윤재가 바꿀 수 있는 기준이었나요?</span>
       </div>
       <div class="es-next">
-        <b>다음 화 · D-60</b>
+        <b>다음 화 · 2학기 개학</b>
         <span>갑자기 소지품 검사가 시작된다. 윤재의 두 번째 믿음, ‘가만히 있으면 안전해’.</span>
       </div>
       <button class="btn" id="btnRestart" type="button">처음부터 다시</button>
@@ -175,7 +179,8 @@
       <p class="title-sub">D-100 · 장학생 수여식까지 100일</p>
     </div>
     <div class="title-actions">
-      <button class="btn btn-big" id="btnStart" type="button">시작하기</button>
+      <button class="btn btn-big" id="btnContinue" type="button" hidden>이어하기</button>
+      <button class="btn btn-big" id="btnStart" type="button">처음부터</button>
       <button class="btn-plain" id="btnFull" type="button">전체 화면으로</button>
     </div>
     <p class="title-ep">1화 · 공부만 잘하면 돼 (프로토타입)</p>

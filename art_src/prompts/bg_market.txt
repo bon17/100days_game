@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_market.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background, wide shot: a traditional Korean market (jangteo) in Gwangju in 1929, summer daytime. Stalls with cloth awnings, piles of straw rice sacks, earthenware jars, baskets of vegetables, people in white hanbok, porters carrying loads on wooden A-frame jige, a Japanese merchant shop with a noren curtain in the background. All signs blank with no writing. Keep the center of the frame open.
