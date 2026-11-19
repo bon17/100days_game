@@ -27,6 +27,7 @@
     아버지기억: 'assets/bg/cg_father.webp',
     어머니기억: 'assets/bg/cg_mother.webp',
     냇가기억: 'assets/bg/cg_stream_friends.webp',
+    윤재울음: 'assets/bg/cg_yunjae_cry.webp',
   };
   const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형' };
   const MEMORY_CAPTION = {
@@ -118,7 +119,18 @@
           const qs = [];
           while (++i < lines.length && lines[i].trim() !== '@endinterrogate') {
             const l = lines[i].trim();
-            if (l.startsWith('Q ')) { const [text, ...answers] = l.slice(2).split('|').map((x) => x.trim()); qs.push({ text, answers, reply: '' }); }
+            if (l.startsWith('Q ')) {
+              const [text, ...raw] = l.slice(2).split('|').map((x) => x.trim());
+              const answers = raw.map((a) => {
+                const tags = a.match(/[#!]\S+/g) || [];
+                return {
+                  text: a.replace(/\s*[#!]\S+/g, '').trim(),
+                  claims: tags.filter((x) => x[0] === '#').map((x) => x.slice(1)),
+                  contra: tags.filter((x) => x[0] === '!').map((x) => x.slice(1)),
+                };
+              });
+              qs.push({ text, answers, reply: '' });
+            }
             else if (l.startsWith('R ') && qs.length) qs[qs.length - 1].reply = l.slice(2).trim();
           }
           cmds.push({ type: 'interrogate', qs });
@@ -1434,15 +1446,20 @@
     const opts = $('itOpts');
     const bar = $('itTime');
     const det = $('itDet');
+    const claims = {};     // claim tag -> the answer text that asserted it
     let will = 100;
-    const drop = Math.max(10, 24 - 3 * S.vars.용기);
-    const showWill = () => { $('itInfo').textContent = `버티는 힘 ${'■'.repeat(Math.ceil(will / 20))}${'□'.repeat(5 - Math.ceil(will / 20))}`; };
-    const slam = async () => {
+    let lies = 0;
+    const drop = Math.max(6, 14 - 2 * S.vars.용기);
+    const showWill = () => {
+      const n = Math.max(0, Math.ceil(will / 20));
+      $('itInfo').textContent = `버티는 힘 ${'■'.repeat(n)}${'□'.repeat(5 - n)}`;
+    };
+    const slam = async (hard) => {
       const f = $('itFlash');
       f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
       $('stage').classList.add('shake');
       box.classList.add('shake');
-      await sleep(450);
+      await sleep(hard ? 700 : 450);
       $('stage').classList.remove('shake');
       box.classList.remove('shake');
     };
@@ -1454,9 +1471,9 @@
       const q = c.qs[i];
       opts.textContent = '';
       bar.style.width = '100%';
-      det.style.setProperty('--near', (0.8 + 0.08 * i).toFixed(2));
+      det.style.setProperty('--near', (0.8 + 0.06 * i).toFixed(2));
       await typeQ(q.text);
-      const secs = 6;
+      const secs = 7;
       const answer = await new Promise((res) => {
         const t0 = performance.now();
         const tick = setInterval(() => {
@@ -1468,20 +1485,33 @@
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'btn';
-          b.textContent = a;
+          b.textContent = a.text;
           b.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(a); });
           opts.appendChild(b);
         });
       });
       opts.textContent = '';
-      will = Math.max(5, will - drop - (answer ? 0 : 6));
-      showWill();
-      await slam();
-      await typeQ(answer ? q.reply : '(침묵) … 말 못 하겠나? ' + q.reply);
+      const caught = answer ? answer.contra.find((k) => k in claims) : null;
+      if (caught) {
+        lies += 1;
+        will -= 40;
+        showWill();
+        await slam(true);
+        await typeQ(`거짓말이군! 아까는 "${claims[caught]}"라고 했지! 말이 왜 바뀌나!`);
+      } else {
+        if (answer) answer.claims.forEach((k) => { claims[k] = answer.text; });
+        will -= drop + (answer ? 0 : 6);
+        showWill();
+        await slam(false);
+        await typeQ(answer ? q.reply : '(침묵) … 말 못 하겠나? ' + q.reply);
+      }
       await sleep(250);
       await waitTap();
     }
+    will = Math.max(0, will);
     S.vars.심문버팀 = will;
+    S.vars.심문거짓말 = lies;
+    if (will >= 25) S.flags.add('심문완주');
     box.hidden = true;
   }
 
