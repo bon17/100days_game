@@ -1,0 +1,7 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./char_mansik_normal.png in the current directory. Portrait (vertical) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+The first attached image is the approved character sheet for Mansik; draw exactly the same boy (face, buzz cut, chin scar, messy uniform, tilted cap). Use the second attached image only as a guide for framing and scale.
+Game character sprite: from the waist up, facing the viewer, centered with some empty margin around him, same framing and scale as a standard visual-novel character portrait. Expression: neutral, easygoing.
+Background: fully transparent (PNG with alpha channel). If transparency is impossible, use a perfectly flat solid pure green (#00FF00) background with no shadow, no gradient and no texture.

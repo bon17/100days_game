@@ -1,0 +1,6 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./ui_topbar.png in the current directory. Wide landscape orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+A single game UI top bar strip, seen flat and straight-on: a very long thin horizontal band (about 10:1) of dark polished wood with a thin brass trim line along the bottom edge and subtle grain. Completely empty, no text, no icons.
+Background: fully transparent (PNG with alpha channel). If transparency is impossible, use a perfectly flat solid pure green (#00FF00) background with no shadow, no gradient and no texture.

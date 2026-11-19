@@ -1,0 +1,6 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./card_escape.png in the current directory. Portrait (vertical, card shape 2:3) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Use the attached card as the template: exactly the same ornate brass-and-dark-wood frame, rounded corners, cream paper, size and style. Only replace the central illustration with: a single narrow wooden ladder rising out of a dark well toward a small bright opening above, symbolizing 'I just need to get myself out'. No text, no numbers, no letters.
+Background around the card: fully transparent if possible; otherwise perfectly flat solid pure green (#00FF00).

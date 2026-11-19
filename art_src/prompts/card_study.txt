@@ -1,0 +1,6 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./card_study.png in the current directory. Portrait (vertical, card shape 2:3) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+A single illustrated game card, front face, filling the frame: an ornate vintage card with a thin brass-and-dark-wood decorative border and rounded corners, aged cream paper inside. Central illustration: a neat stack of old school textbooks with a fountain pen and a small brass desk lamp casting warm hopeful light, symbolizing the belief "if I just study hard, I will be fine". No text, no numbers, no letters on the card or the books.
+Background around the card: fully transparent if possible; otherwise perfectly flat solid pure green (#00FF00).

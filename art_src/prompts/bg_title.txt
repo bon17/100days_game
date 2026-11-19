@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_title.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Title screen illustration. A Korean railway platform near Gwangju at sunset in late autumn 1929. A black steam locomotive with billowing steam passes on the right. In the lower center, the boy from the attached character sheet (Yunjae, in his black school uniform and cap) stands seen from behind, small in the frame, looking at the train and the orange sky. Leave a large calm empty area of sky in the upper center for a game logo to be added later. Cinematic, nostalgic, a little tense. No text anywhere.

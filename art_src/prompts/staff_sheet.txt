@@ -1,0 +1,7 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./staff_sheet.png in the current directory. Landscape orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Character design reference sheet on a plain off-white background for two Japanese staff members at a 1929 Korean boys' school. Draw them as dignified, realistic human beings, NOT caricatures.
+Left half: the PRINCIPAL — the same man standing at the lectern in the attached auditorium image: Japanese man in his fifties, neat side-parted black hair graying at the temples, thick mustache, dark three-piece suit with a tie. One full-body front view plus two upper-body portraits: composed neutral, stern and cold.
+Right half: the INSTRUCTOR who runs the scholarship candidates' summer course — Japanese man in his thirties, thin, very upright posture, short neat hair, round wire-rimmed glasses, dark stand-collar civil-service style uniform. One full-body front view plus two upper-body portraits: polite neutral, stern with narrowed eyes.

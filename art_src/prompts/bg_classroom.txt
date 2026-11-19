@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_classroom.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background, no people: an empty classroom of a 1929 Korean boys' higher common school. Rows of old wooden desks and chairs, a large blank dark-green blackboard with nothing written on it, a wooden teacher's desk on a low platform, tall wooden-framed windows on the left with late-summer afternoon light, plain plaster walls, wooden floor. Calm and slightly stifling atmosphere. Keep the blackboard and teacher's desk in the center so the edges can be cropped. No text, no posters with writing.

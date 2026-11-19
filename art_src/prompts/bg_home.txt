@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_home.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background, no people: the humble home of a poor Korean tenant-farming family near Gwangju in 1929, at dusk. A small thatched-roof hanok house with a wooden maru porch, a dirt courtyard, earthenware jangdok jars on a stone platform, a low stone wall, a persimmon tree, faint smoke from the kitchen chimney, warm lamplight from a paper-screen door. Quiet, tired but warm mood. Keep the maru porch in the center so the edges can be cropped.

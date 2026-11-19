@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_auditorium.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Recreate the attached auditorium scene with the same composition, lighting, colors and the same principal at the lectern, with two corrections: (1) remove the electric ceiling fan entirely and show plain exposed wooden roof beams instead; (2) every student must have very short cropped (almost shaved) hair, as was standard for schoolboys in 1929 — no fluffy modern hairstyles. Keep the stage in the center of the frame. No text anywhere.
