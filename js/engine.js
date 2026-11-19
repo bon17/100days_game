@@ -314,6 +314,10 @@
       }
       return { node, text: sg.t, term: sg.term, done: false };
     });
+    // Reserve the full line's height first so the box does not grow mid-typing.
+    el.style.minHeight = '';
+    el.textContent = nodes.map((n) => n.text).join('');
+    el.style.minHeight = el.offsetHeight + 'px';
     el.textContent = '';
     nodes.forEach((n) => el.appendChild(n.node));
     const termDone = (n) => {
@@ -572,9 +576,17 @@
         });
         box.appendChild(b);
       });
+      placeAbove(box, $('dialog'));
       box.hidden = false;
       $('dialog').classList.remove('ready');
     });
+  }
+  // Keep a panel's bottom edge just above a (visible) box, so a taller box never covers it.
+  function placeAbove(el, below) {
+    if (below.hidden || !below.offsetParent) { el.style.bottom = ''; return; }
+    const parent = (el.offsetParent || el.parentElement).getBoundingClientRect();
+    const top = below.getBoundingClientRect().top;
+    el.style.bottom = top > parent.top ? Math.round(parent.bottom - top + 8) + 'px' : '';
   }
 
   /* ---------- overlays ---------- */
@@ -1542,6 +1554,7 @@
           b.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(a); });
           opts.appendChild(b);
         });
+        placeAbove(opts, qEl.closest('.it-box'));
       });
       opts.textContent = '';
       const caught = answer ? answer.contra.find((k) => k in claims) : null;
@@ -1657,21 +1670,29 @@
     box.hidden = false;
     await briefing('rpBrief', 'btnRpStart');
     const swings = 10;
-    const width = Math.min(32, 14 + 2 * Math.max(0, S.vars.체력 || 0));
+    // Yellow zone grows with stamina; the dark (double) zone is its middle 40%.
+    const width = Math.min(40, 22 + 2.5 * Math.max(0, S.vars.체력 || 0));
+    // The sickle sweeps at a constant speed (no sudden speed-up at the edges) and a bit faster each swing.
+    const sweep = (sec, n) => {
+      const period = (2 * Math.PI) / ((1.25 + n * 0.07) * 2);
+      const ph = (sec % period) / period;
+      return 2 + 96 * (ph < 0.5 ? ph * 2 : 2 - ph * 2);
+    };
     let bundles = 0;
-    for (let n = 0; n < swings; n++) {
-      $('rpInfo').textContent = `${n + 1} / ${swings} · 볏단 ${bundles}`;
+    // n = -1 is one practice swing that does not count.
+    for (let n = -1; n < swings; n++) {
+      const practice = n < 0;
+      $('rpInfo').textContent = practice ? `연습 · 볏단 ${bundles}` : `${n + 1} / ${swings} · 볏단 ${bundles}`;
       const center = 25 + Math.random() * 50;
       zone.style.left = center - width / 2 + '%';
       zone.style.width = width + '%';
-      const speed = 1.6 + n * 0.12;
       const t0 = performance.now();
       let p = 0;
-      msg.textContent = '노란 칸에 왔을 때 화면을 누르세요';
+      msg.textContent = practice ? '연습 한 번! 노란 칸에 왔을 때 화면을 누르세요' : '노란 칸에 왔을 때 화면을 누르세요';
       await new Promise((res) => {
         let raf = 0;
         const loop = (now) => {
-          p = 50 + 48 * Math.sin(((now - t0) / 1000) * speed * 2);
+          p = sweep((now - t0) / 1000, Math.max(0, n));
           needle.style.left = p + '%';
           raf = requestAnimationFrame(loop);
         };
@@ -1679,7 +1700,12 @@
         box.onclick = (e) => { e.stopPropagation(); box.onclick = null; cancelAnimationFrame(raf); res(); };
       });
       const off = Math.abs(p - center);
-      const got = off <= width / 6 ? 2 : off <= width / 2 ? 1 : 0;
+      const got = off <= width / 5 ? 2 : off <= width / 2 ? 1 : 0;
+      if (practice) {
+        msg.textContent = got === 2 ? '연습인데 두 단! 이제 진짜로 베어요' : got === 1 ? '좋아요, 그 느낌! 이제 진짜로 베어요' : '조금 빨랐거나 늦었어요. 이제 진짜로 베어요';
+        await sleep(1300);
+        continue;
+      }
       bundles += got;
       for (let i = 0; i < got; i++) {
         const im = document.createElement('img');
@@ -1810,12 +1836,12 @@
       };
       const d = document.createElement('div');
       d.className = 'sp-bin';
-      d.innerHTML = `<b>겨울 양식</b><div class="sp-ctrl"><span>${food}</span></div><small>한 가마로 다섯 식구가 ${DAYS}일을 버텨요. 나머지 쌀은 모두 여기로.</small>`;
+      d.innerHTML = `<b>겨울 양식</b><div class="sp-ctrl"><span>${food}</span></div><small>한 가마로 다섯 식구가 ${DAYS}일을 버텨요. 나머지 쌀은 모두 여기로. 1가마는 꼭 남겨요.</small>`;
       $('spBins').appendChild(d);
       mk('장리쌀 빚 갚기', '봄에 빌린 쌀 2가마. 못 갚으면 내년에 이자가 붙어요.', debt,
-        () => { debt -= 1; }, () => { debt += 1; }, debt > 0, food > 0 && debt < 2);
+        () => { debt -= 1; }, () => { debt += 1; }, debt > 0, food > 1 && debt < 2);
       mk('팔아서 수리조합비', `한 가마에 5전. 지금 돈 ${moneyNow}전, 필요한 돈 ${fee}전.`, sell,
-        () => { sell -= 1; }, () => { sell += 1; }, sell > 0, food > 0);
+        () => { sell -= 1; }, () => { sell += 1; }, sell > 0, food > 1);
       const days = food * DAYS;
       $('spFill').style.width = Math.min(100, (100 * days) / NEED) + '%';
       $('spCalText').textContent = `쌀독이 바닥나는 날: ${dateOf(days)} · 설날까지 ${Math.max(0, NEED - days)}일 모자라요`;
@@ -1828,11 +1854,19 @@
     box.hidden = false;
     await new Promise((res) => { $('btnSpDone').onclick = (e) => { e.stopPropagation(); $('btnSpDone').onclick = null; res(); }; });
     const food = left - debt - sell;
-    const needSell = Math.max(0, Math.ceil((fee - moneyNow) / 5));
-    const best = Math.max(0, left - 2 - needSell);
     const paidDebt = debt >= 2;
     const feeOk = moneyNow + sell * 5 >= fee;
-    const grade = paidDebt && feeOk ? (food >= best ? 'S' : 'A') : paidDebt || feeOk ? 'B' : 'C';
+    // Points: debt paid 1, fee covered 1, winter food 1 bag 0 / 2 bags 1 / 3+ bags 2.
+    // The grade compares this split with the best split possible for this harvest (at least 1 bag kept).
+    const score = (dbt, sl) => {
+      const f = left - dbt - sl;
+      return (dbt >= 2 ? 1 : 0) + (moneyNow + sl * 5 >= fee ? 1 : 0) + (f >= 3 ? 2 : f === 2 ? 1 : 0);
+    };
+    let best = 0;
+    for (let dbt = 0; dbt <= 2; dbt++) for (let sl = 0; left - dbt - sl >= 1; sl++) best = Math.max(best, score(dbt, sl));
+    const gap = best - score(debt, sell);
+    // With only one bag left for the winter (12 days), the grade stays at B or below.
+    const grade = gap <= 0 && food > 1 ? 'S' : gap <= 1 && food > 1 ? 'A' : gap <= 2 ? 'B' : 'C';
     recordGrade('쌀나누기', grade);
     S.vars.쌀 = food;
     S.vars.쌀판것 = sell;
@@ -1843,7 +1877,7 @@
     $('spTitle').textContent = `등급 ${grade}`;
     $('spBins').innerHTML = '';
     $('spWarn').textContent = '';
-    $('spCalText').textContent = `${dateOf(food * DAYS)}, 쌀독이 바닥나요. 설날까지 ${Math.max(0, NEED - food * DAYS)}일 모자라요.\n윤재가 잘못 나눈 게 아니에요. 처음부터 모자랐어요.`;
+    $('spCalText').textContent = `빚 갚기 ${paidDebt ? '○' : '✕'} · 수리조합비 ${feeOk ? '○' : '✕'} · 겨울 양식 ${food}가마(${food * DAYS}일)\n${dateOf(food * DAYS)}, 쌀독이 바닥나요. 설날까지 ${Math.max(0, NEED - food * DAYS)}일 모자라요.\n윤재가 잘못 나눈 게 아니에요. 처음부터 모자랐어요.`;
     $('spCalText').style.whiteSpace = 'pre-line';
     $('btnSpDone').textContent = '계속';
     await new Promise((res) => { $('btnSpDone').onclick = (e) => { e.stopPropagation(); $('btnSpDone').onclick = null; res(); }; });
