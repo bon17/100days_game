@@ -1,6 +1,7 @@
 /* Layout: full-bleed landscape stage with a slim top bar (day, stats, money, gauges, bag).
    Everything else (map, bag, mini-games, cards) opens as an overlay on top of the scene. */
 :root {
+  --paper-frame: url("../assets/ui/ui_button.webp") 84 fill / var(--pf, 10px) stretch;
   --night: #140e0a;
   --ink: #2b1d13;
   --ink-soft: #5a4532;
@@ -137,10 +138,10 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 }
 .nametag {
   position: absolute; top: calc(-1 * clamp(26px, 5.6vh, 44px)); left: clamp(4px, 1vw, 12px);
-  border-style: solid; border-width: 8px 14px;
-  border-image: url("../assets/ui/ui_button.webp") 44 fill / 8px 14px stretch;
+  --pf: 8px; border-style: solid; border-width: 8px;
+  border-image: var(--paper-frame); padding: 0 6px;
   font-family: var(--f-ui); font-weight: 900; color: var(--ink);
-  font-size: clamp(13px, 2.6vh, 20px); line-height: 1.1; white-space: nowrap;
+  font-size: clamp(13px, 2.6vh, 20px); line-height: 1.25; white-space: nowrap;
 }
 .line {
   margin: 0; font-family: var(--f-body); font-weight: 700;
@@ -167,9 +168,9 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
   background: radial-gradient(ellipse at center, rgba(16, 10, 6, 0.55), transparent 70%);
 }
 .btn, .choice {
-  border-style: solid; border-width: clamp(10px, 2vh, 16px) clamp(16px, 3vh, 26px);
-  border-image: url("../assets/ui/ui_button.webp") 44 fill / clamp(10px, 2vh, 16px) clamp(16px, 3vh, 26px) stretch;
-  background: none; padding: 0 clamp(8px, 1.6vw, 18px);
+  --pf: clamp(9px, 1.6vh, 12px); border-style: solid; border-width: var(--pf);
+  border-image: var(--paper-frame);
+  background: none; padding: clamp(1px, 0.5vh, 5px) clamp(12px, 2vw, 22px);
   color: var(--ink); font-family: var(--f-body); font-weight: 700;
   font-size: clamp(15px, 3.2vh, 24px); line-height: 1.35;
   transition: transform 0.15s ease, filter 0.15s ease;
@@ -193,8 +194,8 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
   position: absolute; z-index: 19; top: calc(var(--top-h) + 10px);
   left: calc(var(--gut-l) + 4%); right: calc(var(--gut-r) + 4%);
   display: flex; gap: 10px; align-items: baseline;
-  border-style: solid; border-width: 10px 16px;
-  border-image: url("../assets/ui/ui_button.webp") 44 fill / 10px 16px stretch;
+  --pf: 9px; border-style: solid; border-width: 9px;
+  border-image: var(--paper-frame); padding: 2px 10px;
   color: var(--ink); font-size: clamp(12px, 2.5vh, 18px); line-height: 1.45;
   animation: rise 0.3s ease both;
 }
@@ -232,8 +233,8 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 .sl-text .term { text-decoration-color: #f2c98a; }
 .termpop {
   position: absolute; z-index: 36; box-sizing: border-box; max-width: min(340px, 72vw);
-  border-style: solid; border-width: 9px 14px;
-  border-image: url("../assets/ui/ui_button.webp") 44 fill / 9px 14px stretch;
+  --pf: 9px; border-style: solid; border-width: 9px;
+  border-image: var(--paper-frame); padding: 1px 8px;
   color: var(--ink); font-weight: 500; font-size: clamp(12px, 2.4vh, 16px); line-height: 1.45;
   word-break: keep-all; text-shadow: none; text-align: left;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
@@ -259,9 +260,9 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 .spot {
   position: absolute; transform: translate(-50%, -50%);
   display: flex; flex-direction: column; align-items: center; gap: 0;
-  border-style: solid; border-width: 8px 14px;
-  border-image: url("../assets/ui/ui_button.webp") 44 fill / 8px 14px stretch;
-  background: none; padding: 0 4px; color: var(--ink); white-space: nowrap;
+  --pf: 8px; border-style: solid; border-width: 8px;
+  border-image: var(--paper-frame);
+  background: none; padding: 0 10px; color: var(--ink); white-space: nowrap;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
   animation: rise 0.35s ease both;
 }
@@ -276,7 +277,7 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 
 /* ---------- free-time intro popup ---------- */
 .freeintro { z-index: 24; top: var(--top-h); background: rgba(16, 10, 6, 0.55); }
-.free-panel { width: min(92%, 760px); }
+.free-panel { width: min(92%, 680px); }
 .free-panel .note-body { gap: 0.9vh; max-height: calc(78vh - var(--top-h)); }
 .fi-text { margin: 0; font-family: var(--f-body); font-weight: 700; font-size: clamp(13px, 2.7vh, 19px); line-height: 1.6; word-break: keep-all; }
 .fi-extra { margin: 0; padding: 6px 12px; border-radius: 8px; background: rgba(178, 58, 46, 0.12); color: var(--seal); font-weight: 700; font-size: clamp(12px, 2.5vh, 17px); line-height: 1.5; word-break: keep-all; }
@@ -355,7 +356,7 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
   border-radius: 99px; padding: 0 6px; line-height: 1.5;
 }
 .ins-brief { position: absolute; inset: var(--top-h) 0 0; z-index: 3; display: flex; align-items: center; justify-content: center; background: rgba(16, 10, 6, 0.6); }
-.brief-panel { width: min(92%, 720px); }
+.brief-panel { max-width: min(92%, 640px); }
 .brief-panel .note-body { max-height: calc(82vh - var(--top-h)); gap: 0.8vh; }
 .brief-items { display: flex; gap: 10px; flex-wrap: wrap; }
 .brief-items .ins-item { width: auto; flex-direction: row; gap: 6px; padding: 4px 10px; }
@@ -462,15 +463,15 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 /* history notes & perks */
 .note-panel {
   box-sizing: border-box; display: flex; gap: clamp(12px, 3vw, 32px); align-items: center;
-  width: min(94%, 980px); max-height: 82vh;
+  width: fit-content; max-width: min(94%, 980px); max-height: 82vh;
   border-style: solid; border-width: clamp(12px, 2.4vh, 22px);
   border-image: url("../assets/ui/ui_dialog.webp") 48 fill / clamp(12px, 2.4vh, 22px) stretch;
-  padding: clamp(8px, 2.4vh, 22px) clamp(10px, 2.4vw, 26px);
+  padding: clamp(4px, 1.4vh, 14px) clamp(8px, 1.8vw, 20px);
   color: var(--ink); animation: rise 0.35s ease both;
 }
 .note-img { flex: none; width: 42%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
 .note-img.icon { width: 24%; aspect-ratio: 1; object-fit: contain; box-shadow: none; }
-.note-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1vh; overflow: auto; max-height: calc(82vh - 6vh); }
+.note-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 0.8vh; overflow: auto; max-height: calc(82vh - 6vh); }
 .note-kicker { margin: 0; font-weight: 700; font-size: clamp(11px, 2.2vh, 15px); color: var(--seal); letter-spacing: 0.06em; }
 .note-title { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(20px, 4.8vh, 36px); line-height: 1.2; }
 .note-text { margin: 0; font-family: var(--f-body); font-weight: 700; font-size: clamp(14px, 3vh, 21px); line-height: 1.7; word-break: keep-all; }
@@ -478,7 +479,8 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 
 /* bag */
 .bag { z-index: 40; }
-.bag-panel { align-items: stretch; flex-direction: column; gap: 1.2vh; height: min(80vh, 660px); }
+.bag-panel { width: min(94%, 980px); align-items: stretch; flex-direction: column; gap: 1.2vh; height: min(80vh, 660px); }
+#noteshow .note-panel { width: min(94%, 900px); }
 .bag-tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid rgba(43, 29, 19, 0.2); padding-bottom: 8px; }
 .bag-tabs button {
   background: none; border: 0; border-radius: 8px; padding: 6px 12px;
@@ -593,13 +595,27 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
   padding-top: calc(var(--top-h) * 0.2); padding-bottom: var(--gut-b);
   background: rgba(12, 8, 5, 0.86); z-index: 32;
 }
-/* a memory flashes behind the exam sheet, then fades to a faint trace */
-.ex-flash {
-  position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; pointer-events: none;
-  filter: sepia(0.35) blur(0.5px); opacity: 0.16; animation: memflash 2.6s ease-out both;
+/* a memory flashes big in front of the exam sheet, then shrinks into a photo clipped to its corner */
+.ex-mem {
+  position: absolute; z-index: 3; margin: 0; left: 50%; top: 42%; width: 150%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  padding: 2.2% 2.2% 0; background: #f4ead2; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.75);
+  transition: left 0.55s ease, top 0.55s ease, width 0.55s ease, transform 0.55s ease, box-shadow 0.55s ease;
+  animation: memin 0.35s ease-out both; pointer-events: none;
 }
-@keyframes memflash { 0% { opacity: 0; transform: scale(1.06); } 14% { opacity: 0.9; } 55% { opacity: 0.55; } 100% { opacity: 0.16; transform: scale(1); } }
-.ex-head, .ex-paper, .stamp-btn, .ex-timer { z-index: 1; }
+.ex-mem img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; filter: sepia(0.25); }
+.ex-mem figcaption {
+  font-family: var(--f-hand); color: #2c2a4a; text-align: center; line-height: 1.2;
+  font-size: clamp(18px, 4.6vh, 36px); padding: 0.5em 0 0.4em;
+}
+.ex-mem.pinned { left: 21%; top: 9%; width: 46%; transform: translate(-50%, -50%) rotate(-6deg); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); }
+.ex-mem.pinned figcaption { font-size: clamp(9px, 1.7vh, 14px); padding: 0.25em 0 0.2em; }
+.ex-mem.pinned::before {
+  content: ""; position: absolute; left: 50%; top: -7%; width: 9%; height: 16%; transform: translateX(-50%);
+  border-radius: 3px; background: linear-gradient(#c7c7c7, #8d8d8d); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+@keyframes memin { from { opacity: 0; transform: translate(-50%, -50%) scale(1.08); } }
+.ex-paper { z-index: 2; }
 .ex-head { grid-column: 1 / -1; display: flex; gap: 16px; align-items: baseline; padding-top: 1vh; }
 .ex-part { font-family: var(--f-display); font-size: clamp(16px, 3.6vh, 28px); color: var(--mist); }
 .ex-prog { font-weight: 700; font-size: clamp(12px, 2.4vh, 18px); color: var(--brass); font-variant-numeric: tabular-nums; }

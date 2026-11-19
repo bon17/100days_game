@@ -29,6 +29,11 @@
     냇가기억: 'assets/bg/cg_stream_friends.webp',
   };
   const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형' };
+  const MEMORY_CAPTION = {
+    아버지기억: '새벽 논에서 허리 한 번 못 펴는 아버지',
+    어머니기억: '밤새 남의 옷을 기우는 어머니',
+    냇가기억: '냇가에서 만식이와 웃고 떠들던 날',
+  };
   const CHARS = {
     윤재: { key: 'yunjae', scale: 1, faces: { 기본: 'normal', 웃음: 'smile', 놀람: 'surprised', 화남: 'angry', 슬픔: 'sad' } },
     만식: { key: 'mansik', scale: 0.84, faces: { 기본: 'normal', 웃음: 'smile', 걱정: 'worried', 멍: 'bruised' } },
@@ -1012,12 +1017,19 @@
       const q = c.qs[qi];
       $('exProg').textContent = `${qi + 1} / ${c.qs.length}` + (bonus ? ` · 학업 보너스 +${bonus}초` : '');
       $('exQ').textContent = q.text;
-      const fl = $('exFlash');
+      stamp.hidden = true;
+      fb.textContent = '';
+      const mem = $('exMem');
+      mem.classList.remove('pinned');
       if (q.flash && BG[q.flash]) {
-        fl.src = BG[q.flash];
-        fl.hidden = false;
-        fl.style.animation = 'none'; void fl.offsetWidth; fl.style.animation = '';
-      } else fl.hidden = true;
+        $('exMemImg').src = BG[q.flash];
+        $('exMemCap').textContent = MEMORY_CAPTION[q.flash] || '';
+        mem.hidden = false;
+        mem.style.animation = 'none'; void mem.offsetWidth; mem.style.animation = '';
+        await sleep(1300);
+        mem.classList.add('pinned');
+        await sleep(450);
+      } else mem.hidden = true;
       stamp.hidden = true;
       fb.textContent = '';
       btnO.disabled = false;
@@ -1059,7 +1071,7 @@
       await sleep(1100);
     }
     S.vars[c.key] = (S.vars[c.key] || 0) + correct;
-    $('exFlash').hidden = true;
+    $('exMem').hidden = true;
     $('exQ').textContent = `${c.title} 끝\n${c.qs.length}문제 중 ${correct}문제가 시험 정답과 같았다.`;
     stamp.hidden = true;
     fb.textContent = '화면을 눌러 계속';
