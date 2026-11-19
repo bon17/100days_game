@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_police.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background, late afternoon: the front of a colonial-era police station in Gwangju in 1929, a two-story Western-style building with tall windows, a heavy wooden door, a gas lamp, a Japanese flag on a pole, a wooden guard box beside the gate. No people, all signs blank with no writing. Cold oppressive mood. Keep the entrance in the center.

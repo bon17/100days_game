@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_desk.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game mini-game background, top-down view looking straight down at an old wooden school desk in 1929, filling the frame. On the left half, an open worn brown leather school satchel with its flap thrown back and an empty inside. On the right, a closed rectangular aluminum lunch box (dosirak) with a cloth wrapper beside it. At the bottom center, the desk drawer pulled slightly open showing a dark gap. Warm classroom light, wood grain, a few pencil scratches. No text, no papers with writing.

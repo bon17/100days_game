@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./item_letter.png in the current directory. Square orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+A single game item icon in the same sepia ink-and-wash style, bold simple silhouette readable at small sizes, slightly thick outlines, centered with a small margin. No text, no letters. Subject: a small folded letter of cream paper tied with a thin red ribbon, with faint unreadable brush strokes showing through. Background: fully transparent (PNG with alpha channel). If transparency is impossible, use a perfectly flat solid pure green (#00FF00) background with no shadow, no gradient and no texture.

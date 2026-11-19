@@ -19,6 +19,10 @@
     책방: 'assets/bg/bg_bookstore.webp',
     냇가: 'assets/bg/bg_stream.webp',
     역: 'assets/bg/bg_title.webp',
+    경찰서: 'assets/bg/bg_police.webp',
+    만식네: 'assets/bg/bg_poorhouse.webp',
+    골목: 'assets/bg/bg_alley.webp',
+    책상: 'assets/bg/bg_desk.webp',
   };
   const CHARS = {
     윤재: { key: 'yunjae', scale: 1, faces: { 기본: 'normal', 웃음: 'smile', 놀람: 'surprised', 화남: 'angry', 슬픔: 'sad' } },
@@ -27,6 +31,8 @@
     교관: { key: 'instructor', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
     진수: { key: 'senior', scale: 1.02, faces: { 기본: 'normal', 씁쓸: 'bitter' } },
     정희: { key: 'junghee', scale: 0.97, faces: { 기본: 'normal', 웃음: 'smile', 걱정: 'worried' } },
+    기철: { key: 'gicheol', scale: 1.02, faces: { 기본: 'normal', 진지: 'serious' } },
+    형사: { key: 'detective', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
   const STATS = {
@@ -40,10 +46,11 @@
     만식: { name: '만식', up: '만식과 가까워졌다', down: '만식이 조금 서운해한다' },
     정희: { name: '정희', up: '정희와 가까워졌다', down: '정희가 고개를 갸웃한다' },
     진수: { name: '진수 형', up: '진수 형과 가까워졌다', down: '진수 형이 씁쓸하게 웃는다' },
+    기철: { name: '기철', up: '기철과 가까워졌다', down: '기철이 말없이 고개를 끄덕인다' },
   };
   const CARDS = [
     { id: 'study', name: '공부', label: '공부만 잘하면 돼', truth: '실력만으로 오르는 사다리가 아니었다.', states: ['normal', 'hairline', 'cracked', 'broken'] },
-    { id: 'safe', name: '안전', label: '가만히 있으면 안전해', states: ['normal'] },
+    { id: 'safe', name: '안전', label: '가만히 있으면 안전해', truth: '가만히 있어도 안전하지 않았다. 감시는 아무나 노렸다.', states: ['normal', 'cracked', 'broken'] },
     { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', states: ['normal'] },
     { id: 'escape', name: '탈출', label: '나 하나만 빠져나가면 돼', states: ['normal'] },
     { id: 'hopeless', name: '원래', label: '태어나 보니 원래 이랬어', truth: '원래 그런 세상은 없었다. 누군가 빼앗은 것이다.', states: ['normal'] },
@@ -70,6 +77,7 @@
     const m = text.match(/^\[(\S+)\s+([^\]]+)\]\s*(.*)$/);
     if (!m) return { text, req: null };
     if (m[1] === '소지품') return { text: m[3], req: { item: m[2].trim() } };
+    if (m[1] === '마음') return { text: m[3], req: { perk: m[2].trim() } };
     return { text: m[3], req: { k: m[1], n: Number(m[2]) } };
   }
 
@@ -87,11 +95,13 @@
       if (before && before.type === 'choice' && !t.startsWith('?')) before.closed = true;
       if (t.startsWith('## ')) { labels[t.slice(3).trim()] = cmds.length; continue; }
       if (t.startsWith('@')) {
-        const name = t.slice(1).split(/\s+/)[0];
-        const arg = t.slice(1 + name.length).trim();
+        const raw = t.slice(1).split(/\s+/)[0];
+        const arg = t.slice(1 + raw.length).trim();
+        const quiet = raw.endsWith('!');
+        const name = quiet ? raw.slice(0, -1) : raw;
         const parts = arg.split('|').map((x) => x.trim());
         if (name === 'term') { if (parts[1]) terms[parts[0]] = parts.slice(1).join(' | '); continue; }
-        if (name === 'itemdef') { items[parts[0]] = { img: `assets/item/${parts[1]}.webp`, desc: parts.slice(2).join(' | ') }; continue; }
+        if (name === 'itemdef') { items[parts[0]] = { img: `assets/item/${parts[1]}.webp`, desc: parts[2] || '', risk: Number(parts[3]) || 0 }; continue; }
         if (name === 'spot') { spots[parts[0]] = { x: Number(parts[1]), y: Number(parts[2]), hint: parts[3] || '' }; continue; }
         if (name === 'exam') {
           const qs = [];
@@ -102,7 +112,7 @@
           cmds.push({ type: 'exam', key: parts[0], title: parts[1], secs: Number(parts[2]) || 6, qs });
           continue;
         }
-        cmds.push({ type: name, arg });
+        cmds.push({ type: name, arg, quiet });
         continue;
       }
       if (t.startsWith('?')) {
@@ -148,6 +158,7 @@
       day: 100,
       time: '',
       bg: '',
+      ep: 1,
     };
   }
 
@@ -356,6 +367,7 @@
   function applyEffects(effects, quiet) {
     effects.forEach((ef) => {
       if (ef.flag) { S.flags.add(ef.flag); return; }
+      if (!ef.d) return;
       const k = ef.v;
       S.vars[k] = (S.vars[k] || 0) + ef.d;
       if (k === '돈' && S.vars.돈 < 0) S.vars.돈 = 0;
@@ -396,6 +408,7 @@
   function reqMet(req) {
     if (!req) return true;
     if (req.item) return has(req.item);
+    if (req.perk) return S.perks.some((p) => p.name === req.perk);
     return (S.vars[req.k] || 0) >= req.n;
   }
   function reqChip(req) {
@@ -404,6 +417,7 @@
     let icon = '';
     let label = '';
     if (req.item) { icon = prog.items[req.item] ? prog.items[req.item].img : ''; label = req.item; }
+    else if (req.perk) { icon = STATS.용기.icon; label = `마음: ${req.perk}`; }
     else if (STATS[req.k]) { icon = STATS[req.k].icon; label = `${req.k} ${req.n}`; }
     else if (req.k === '돈') { icon = MONEY_ICON; label = `${req.n}전`; }
     else label = `${req.k} ${req.n}`;
@@ -484,7 +498,7 @@
           if (performance.now() - shownAt < 450) return;
           if (!ok) {
             const r = o.req;
-            toast(r.item ? `‘${r.item}’이(가) 있어야 해요` : r.k === '돈' ? `돈이 ${r.n}전 있어야 해요` : `${r.k}이(가) ${r.n} 이상이어야 해요`, r.item ? null : STATS[r.k] ? STATS[r.k].icon : MONEY_ICON);
+            toast(r.perk ? `‘${r.perk}’ 마음이 있어야 해요` : r.item ? `‘${r.item}’이(가) 있어야 해요` : r.k === '돈' ? `돈이 ${r.n}전 있어야 해요` : `${r.k}이(가) ${r.n} 이상이어야 해요`, r.item ? null : STATS[r.k] ? STATS[r.k].icon : MONEY_ICON);
             return;
           }
           box.hidden = true;
@@ -638,18 +652,20 @@
     hud(['가방']);
     flashBag();
   }
-  async function noteEvent(arg) {
+  async function noteEvent(arg, quiet) {
     const [title, bgKey, ...rest] = arg.split('|').map((x) => x.trim());
     if (S.notes.some((n) => n.title === title)) return;
     const note = { title, img: BG[bgKey] || '', text: rest.join(' | ') };
     S.notes.push(note);
+    if (quiet) return;
     await modal({ kicker: '알고 가기', title, text: note.text, img: note.img, saved: '역사 노트에 저장했어요. 위쪽 ‘가방’에서 다시 볼 수 있어요.' });
   }
-  async function perkEvent(arg) {
+  async function perkEvent(arg, quiet) {
     const [name, ...rest] = arg.split('|').map((x) => x.trim());
     if (S.perks.some((p) => p.name === name)) return;
     const perk = { name, text: rest.join(' | ') };
     S.perks.push(perk);
+    if (quiet) return;
     await modal({ kicker: '새로운 마음을 얻었다', title: name, text: perk.text, img: STATS.용기.icon, icon: true, saved: '가방 > 윤재에서 볼 수 있어요.' });
   }
 
@@ -847,7 +863,8 @@
       $('mapview').hidden = true;
       S.vars['방문_' + n] = (S.vars['방문_' + n] || 0) + 1;
       if (BG[n]) await setBg(n);
-      const label = '장소:' + n;
+      const epLabel = `장소${S.ep > 1 ? S.ep : ''}:${n}`;
+      const label = epLabel in prog.labels ? epLabel : '장소:' + n;
       if (label in prog.labels) await runSub(prog.labels[label], id);
       hideSprite('모두');
       $('dialog').hidden = true;
@@ -1019,6 +1036,8 @@
   function endScreen() {
     $('dialog').hidden = true;
     clearSave();
+    $('btnNext').hidden = true;
+    $('esNextBox').hidden = true;
     $('esCard').src = cardSrc('study', S.cards.study);
     const v = S.vars;
     const hearts = (k) => { const n = Math.max(0, Math.min(5, v[k] || 0)); return '♥'.repeat(n) + '♡'.repeat(5 - n); };
@@ -1046,6 +1065,229 @@
     await sleep(300);
     el.src = src;
     el.style.opacity = 1;
+  }
+
+  /* ---------- inspection mini-game: hide risky items before the detective arrives ---------- */
+  // positions are % of the 16:9 desk picture
+  const INSPECT_SPOTS = [
+    { name: '도시락통', x: 67, y: 31 },
+    { name: '서랍 밑', x: 50, y: 88 },
+    { name: '손수건 밑', x: 82, y: 60, need: 3 },
+  ];
+  async function inspectGame(arg) {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('inspect');
+    const bagEl = $('insBag');
+    const spotsEl = $('insSpots');
+    const det = $('insDet');
+    const msg = $('insMsg');
+    const secs = (Number(arg) || 12) + Math.max(0, S.vars.눈치 - 2);
+    const spots = INSPECT_SPOTS.filter((sp) => !sp.need || S.vars.눈치 >= sp.need);
+    const place = {};
+    S.items.forEach((n) => { place[n] = null; });
+    let sel = null;
+    let locked = false;
+    const itemBtn = (n) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ins-item' + (sel === n ? ' sel' : '');
+      const meta = prog.items[n] || {};
+      b.innerHTML = `<img alt="" src="${meta.img || ''}"><span></span>`;
+      b.querySelector('span').textContent = n;
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (locked) return;
+        if (place[n]) { place[n] = null; sel = null; } else { sel = sel === n ? null : n; }
+        render();
+      });
+      return b;
+    };
+    const render = () => {
+      bagEl.textContent = '';
+      Object.keys(place).filter((n) => !place[n]).forEach((n) => bagEl.appendChild(itemBtn(n)));
+      spotsEl.textContent = '';
+      spots.forEach((sp) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ins-spot' + (sel ? ' ready' : '');
+        b.style.left = sp.x + '%';
+        b.style.top = sp.y + '%';
+        const inside = Object.keys(place).find((n) => place[n] === sp.name);
+        const label = document.createElement('span');
+        label.textContent = sp.name;
+        b.appendChild(label);
+        if (inside) b.appendChild(itemBtn(inside));
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (locked || !sel) return;
+          const prev = Object.keys(place).find((n) => place[n] === sp.name);
+          if (prev) place[prev] = null;
+          place[sel] = sp.name;
+          sel = null;
+          render();
+        });
+        spotsEl.appendChild(b);
+      });
+    };
+    render();
+    msg.textContent = '걸릴 만한 물건을 누른 뒤, 숨길 곳을 누르세요';
+    det.style.setProperty('--near', 0.45);
+    box.hidden = false;
+    const t0 = performance.now();
+    await new Promise((res) => {
+      const tick = setInterval(() => {
+        const left = Math.max(0, secs * 1000 - (performance.now() - t0));
+        $('insInfo').textContent = `형사가 오기까지 ${Math.ceil(left / 1000)}초`;
+        det.style.setProperty('--near', (0.45 + 0.5 * (1 - left / (secs * 1000))).toFixed(3));
+        if (left <= 0) { clearInterval(tick); res(); }
+      }, 100);
+    });
+    locked = true;
+    sel = null;
+    render();
+    const found = Object.keys(place).filter((n) => !place[n] && (prog.items[n] || {}).risk > 0);
+    S.vars.검사적발 = found.length;
+    found.forEach((n) => {
+      const risk = prog.items[n].risk;
+      S.items = S.items.filter((x) => x !== n);
+      S.flags.add('걸림_' + n);
+      applyEffects(risk >= 2 ? [{ v: '의심', d: 20 }, { v: '성적', d: -15 }] : [{ v: '의심', d: 5 }]);
+    });
+    msg.textContent = found.length
+      ? `형사가 가방을 뒤졌다. 걸린 물건: ${found.join(', ')} · 화면을 눌러 계속`
+      : '형사가 가방을 뒤졌다. 숨긴 물건은 들키지 않았다 · 화면을 눌러 계속';
+    await new Promise((res) => {
+      box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); };
+    });
+    box.hidden = true;
+  }
+
+  /* ---------- chase mini-game: choose alleys before the detective catches up ---------- */
+  async function chaseGame(arg) {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('chase');
+    const det = $('chDet');
+    const opts = $('chOpts');
+    const hint = $('chHint');
+    const msg = $('chMsg');
+    const bgEl = box.querySelector('.ch-bg');
+    const steps = Number(arg) || 5;
+    const limit = Math.min(5.5, 3.6 + 0.3 * Math.max(0, S.vars.체력 - 2));
+    const hintChance = S.vars.눈치 >= 2 ? Math.min(0.9, 0.25 + 0.15 * S.vars.눈치) : 0.1;
+    const DIRS = ['왼쪽 골목', '곧장', '오른쪽 골목'];
+    let gap = 3;
+    const nearOf = (g) => [1.05, 0.85, 0.65, 0.42][Math.max(0, Math.min(3, g))];
+    det.style.setProperty('--near', nearOf(gap));
+    msg.textContent = '';
+    box.hidden = false;
+    for (let i = 0; i < steps && gap > 0; i++) {
+      $('chInfo').textContent = `갈림길 ${i + 1} / ${steps} · 거리 ${'●'.repeat(gap)}${'○'.repeat(3 - gap)}`;
+      const n = Math.random() < 0.5 ? 2 : 3;
+      const choices = n === 2 ? (Math.random() < 0.5 ? [DIRS[0], DIRS[2]] : [DIRS[0], DIRS[1]]) : DIRS.slice();
+      const dead = choices[Math.floor(Math.random() * choices.length)];
+      hint.textContent = Math.random() < hintChance ? `${dead} 끝에 담벼락이 보인다!` : '';
+      opts.textContent = '';
+      const pick = await new Promise((res) => {
+        const t0 = performance.now();
+        const bar = $('chTime');
+        const tick = setInterval(() => {
+          const left = Math.max(0, limit * 1000 - (performance.now() - t0));
+          bar.style.width = (100 * left) / (limit * 1000) + '%';
+          if (left <= 0) { clearInterval(tick); res(null); }
+        }, 50);
+        choices.forEach((c) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'btn';
+          b.textContent = c;
+          b.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(c); });
+          opts.appendChild(b);
+        });
+      });
+      opts.textContent = '';
+      hint.textContent = '';
+      if (!pick || pick === dead) {
+        gap -= 1;
+        msg.textContent = pick ? '막다른 길이다! 형사가 가까워진다' : '머뭇거리는 사이 형사가 가까워진다';
+        $('stage').classList.add('shake');
+        setTimeout(() => $('stage').classList.remove('shake'), 450);
+      } else {
+        msg.textContent = '골목을 빠져나왔다';
+      }
+      bgEl.classList.remove('run'); void bgEl.offsetWidth; bgEl.classList.add('run');
+      det.style.setProperty('--near', nearOf(gap));
+      await sleep(900);
+    }
+    S.vars.추격성공 = gap > 0 ? 1 : 0;
+    $('chInfo').textContent = '';
+    msg.textContent = (gap > 0 ? '형사를 따돌렸다!' : '형사에게 붙잡혔다…') + ' · 화면을 눌러 계속';
+    await new Promise((res) => { box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); }; });
+    box.hidden = true;
+  }
+
+  /* ---------- chapter title and chapter end ---------- */
+  async function chapterCard(arg) {
+    const [num, title, cardName] = arg.split('|').map((x) => x.trim());
+    const card = CARDS.find((c) => c.name === cardName);
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const img = $('dcImg');
+    img.hidden = !card;
+    if (card) img.src = cardSrc(card.id, S.cards[card.id]);
+    $('dcNum').hidden = false;
+    $('dcNum').textContent = num + '화';
+    $('dcDate').textContent = title || '';
+    $('dcPlace').textContent = card ? `윤재의 믿음 · ‘${card.label}’` : '';
+    $('daycard').hidden = false;
+    await sleep(800);
+    await Promise.race([sleep(2600), waitTap()]);
+    tapResolver = null;
+    $('daycard').hidden = true;
+    img.hidden = true;
+  }
+
+  function chapterStats() {
+    const v = S.vars;
+    const hearts = (k) => { const n = Math.max(0, Math.min(5, v[k] || 0)); return '♥'.repeat(n) + '♡'.repeat(5 - n); };
+    const stats = [
+      ['능력치', `학업 ${v.학업} · 눈치 ${v.눈치} · 체력 ${v.체력} · 용기 ${v.용기}`],
+      ['돈', `${v.돈}전`],
+      ['장학생 게이지', `${Math.max(0, Math.min(100, v.성적))} / 100`],
+      ['의심도', `${Math.max(0, Math.min(100, v.의심))} / 100`],
+      ['만식', hearts('만식')],
+    ];
+    ['정희', '진수', '기철'].forEach((k) => { if (S.flags.has('만남_' + k)) stats.push([RELS[k].name, hearts(k)]); });
+    if (S.perks.length) stats.push(['새로운 마음', S.perks.map((p) => p.name).join(', ')]);
+    return stats;
+  }
+
+  async function chapterEnd(arg) {
+    const [num, title, cardName, ask, nextTitle, nextDesc] = arg.split('|').map((x) => x.trim());
+    const card = CARDS.find((c) => c.name === cardName) || CARDS[0];
+    $('dialog').hidden = true;
+    hideSprite('모두');
+    save(pc);
+    $('esCard').src = cardSrc(card.id, S.cards[card.id]);
+    $('esKicker').textContent = `${num}화 끝`;
+    $('esTitle').textContent = title || '';
+    $('esAsk').textContent = ask || '';
+    $('esNextBox').hidden = !nextTitle;
+    $('esNextTitle').textContent = nextTitle ? `다음 화 · ${nextTitle}` : '';
+    $('esNextDesc').textContent = nextDesc || '';
+    $('btnNext').hidden = !nextTitle || !(nextLabelExists());
+    if (nextTitle && $('btnNext').hidden) $('esNextTitle').textContent += ' (준비 중)';
+    $('esStats').innerHTML = chapterStats().map(([k, val]) => `<li><b>${k}</b><span>${val}</span></li>`).join('');
+    $('endscreen').hidden = false;
+    await new Promise((res) => { nextResolver = res; });
+    $('endscreen').hidden = true;
+  }
+  let nextResolver = null;
+  function nextLabelExists() {
+    const c = prog.cmds[pc];
+    return !!c && c.type === 'jump' && !c.cond && c.go in prog.labels;
   }
 
   /* ---------- prologue slides ---------- */
@@ -1092,7 +1334,7 @@
     try {
       const data = {
         pc: atPc, vars: S.vars, flags: [...S.flags], cards: S.cards, seenTerms: [...S.seenTerms],
-        notes: S.notes, items: S.items, perks: S.perks, quests: S.quests, hud: hudList(), day: S.day, bg: S.bg,
+        notes: S.notes, items: S.items, perks: S.perks, quests: S.quests, hud: hudList(), day: S.day, bg: S.bg, ep: S.ep,
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (err) { /* storage may be unavailable */ }
@@ -1128,7 +1370,7 @@
         const [eff, note] = c.arg.split('|').map((x) => x.trim());
         const m = eff.match(/^(\S+)\s*([+-]\d+)$/);
         if (m) {
-          applyEffects([{ v: m[1], d: Number(m[2]) }], !!note);
+          applyEffects([{ v: m[1], d: Number(m[2]) }], !!note || c.quiet);
           if (note) toast(`${note}  ·  ${m[1] === '성적' ? '장학생 게이지' : m[1]} ${m[2]}`);
         }
         return sleep(300);
@@ -1152,12 +1394,28 @@
         $('btnSkip').hidden = !skipTarget;
         return;
       }
-      case 'note': return noteEvent(c.arg);
-      case 'perk': return perkEvent(c.arg);
+      case 'note': return noteEvent(c.arg, c.quiet);
+      case 'perk': return perkEvent(c.arg, c.quiet);
+      case 'set': {
+        const [k, v] = c.arg.split(/\s+/);
+        S.vars[k] = Number(v) || 0;
+        renderTop();
+        return;
+      }
+      case 'episode': {
+        S.ep = Number(c.arg) || 1;
+        Object.keys(S.vars).forEach((k) => { if (k.startsWith('방문_')) delete S.vars[k]; });
+        return;
+      }
+      case 'chapter': save(pc - 1); return chapterCard(c.arg);
+      case 'chapterend': return chapterEnd(c.arg);
+      case 'inspect': return inspectGame(c.arg);
+      case 'chase': return chaseGame(c.arg);
       case 'waver': return waver(c.arg);
       case 'get': {
         const name = c.arg.trim();
         if (!has(name)) S.items.push(name);
+        if (c.quiet) return;
         hud(['가방']);
         flashBag();
         toast(`‘${name}’을(를) 얻었다`, (prog.items[name] || {}).img);
@@ -1166,12 +1424,14 @@
       case 'lose': {
         const name = c.arg.trim();
         S.items = S.items.filter((x) => x !== name);
+        if (c.quiet) return;
         toast(`‘${name}’을(를) 건넸다`, (prog.items[name] || {}).img);
         return sleep(300);
       }
       case 'quest': {
         const [qid, text] = c.arg.split('|').map((x) => x.trim());
         if (!S.quests.some((q) => q.id === qid)) S.quests.push({ id: qid, text: text || qid, done: false });
+        if (c.quiet) return;
         hud(['가방']);
         flashBag();
         toast(`할 일: ${text || qid}`);
@@ -1179,7 +1439,7 @@
       }
       case 'done': {
         const q = S.quests.find((x) => x.id === c.arg.trim());
-        if (q && !q.done) { q.done = true; toast(`할 일 완료: ${q.text}`); }
+        if (q && !q.done) { q.done = true; if (!c.quiet) toast(`할 일 완료: ${q.text}`); }
         return sleep(300);
       }
       case 'explore': save(pc - 1); return explore(c.arg, id);
@@ -1187,7 +1447,15 @@
       case 'carry': return carryGame();
       case 'notebook': return notebook(c.arg);
       case 'cards': S.flags.add('믿음소개'); return cardsIntro();
-      case 'card': return cardEvent(c.arg);
+      case 'card': {
+        if (c.quiet) {
+          const [name, stName] = c.arg.split(/\s+/);
+          const card = CARDS.find((x) => x.name === name || x.id === name);
+          if (card) S.cards[card.id] = CARD_STATE[stName] || stName;
+          return;
+        }
+        return cardEvent(c.arg);
+      }
       case 'exam': return exam(c);
       case 'result': return resultBoard();
       case 'shake': $('stage').classList.add('shake'); await sleep(450); $('stage').classList.remove('shake'); return;
@@ -1214,14 +1482,15 @@
   }
 
   const OVERLAYS = ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard',
-    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview'];
+    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase'];
 
-  function start(fromSave) {
+  function start(fromSave, label) {
     runId += 1;
     S = newState();
     pc = 0;
     tapResolver = null;
     carryDrop = null;
+    nextResolver = null;
     skipTarget = null;
     skipReq = false;
     hidePops();
@@ -1240,11 +1509,13 @@
       S.perks = fromSave.perks;
       S.quests = fromSave.quests;
       S.day = fromSave.day;
+      S.ep = fromSave.ep || 1;
       fromSave.hud.forEach((c) => $('game').classList.add(c));
       $('game').classList.toggle('hud-any', fromSave.hud.length > 0);
       if (fromSave.bg) setBg(fromSave.bg);
       pc = fromSave.pc;
     }
+    if (label && label in prog.labels) pc = prog.labels[label];
     renderTop();
     run(runId);
   }
@@ -1260,7 +1531,7 @@
   }
 
   async function boot() {
-    prog = parse(window.STORY_STAGE1 || '');
+    prog = parse([window.STORY_STAGE1, window.STORY_STAGE2, window.STORY_STAGE3].filter(Boolean).join('\n'));
     buildTermRe();
     buildStatChips();
     S = newState();
@@ -1281,13 +1552,27 @@
       $('ldText').textContent = `그림을 불러오는 중 ${Math.round(p * 100)}%`;
     });
     $('btnContinue').hidden = !loadSave();
+    const chapters = Object.keys(prog.labels).filter((l) => l.startsWith('바로:'));
+    const chList = $('chapterList');
+    chList.textContent = '';
+    chapters.forEach((l) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn';
+      b.textContent = l.slice(3) + '부터';
+      b.addEventListener('click', (e) => { e.stopPropagation(); clearSave(); $('title').hidden = true; start(null, l); });
+      chList.appendChild(b);
+    });
+    $('btnChapters').hidden = chapters.length === 0;
     $('loading').hidden = true;
     $('title').hidden = false;
   }
 
   $('btnStart').addEventListener('click', (e) => { e.stopPropagation(); clearSave(); $('title').hidden = true; start(); });
   $('btnContinue').addEventListener('click', (e) => { e.stopPropagation(); const s = loadSave(); $('title').hidden = true; start(s); });
-  $('btnRestart').addEventListener('click', (e) => { e.stopPropagation(); start(); });
+  $('btnRestart').addEventListener('click', (e) => { e.stopPropagation(); clearSave(); start(); });
+  $('btnNext').addEventListener('click', (e) => { e.stopPropagation(); if (nextResolver) { const r = nextResolver; nextResolver = null; r(); } });
+  $('btnChapters').addEventListener('click', (e) => { e.stopPropagation(); $('chapterList').hidden = !$('chapterList').hidden; });
   $('btnBag').addEventListener('click', (e) => { e.stopPropagation(); openBag(); });
   $('btnBagClose').addEventListener('click', (e) => { e.stopPropagation(); $('bag').hidden = true; });
   $('bag').addEventListener('click', (e) => { e.stopPropagation(); if (e.target.id === 'bag') $('bag').hidden = true; });

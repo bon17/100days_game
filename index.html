@@ -95,7 +95,31 @@
     <button class="btn bag-close" id="btnBagClose" type="button">닫기</button>
   </div>
 
+  <!-- inspection mini-game: hide risky items before the detective reaches your desk -->
+  <div class="overlay inspect" id="inspect" hidden>
+    <div class="ins-box">
+      <img class="ins-bg" src="assets/bg/bg_desk.webp" alt="">
+      <div class="ins-bag" id="insBag"></div>
+      <div class="ins-spots" id="insSpots"></div>
+    </div>
+    <img class="ins-det" id="insDet" src="assets/char/char_detective_stern.webp" alt="">
+    <div class="ins-head"><b>소지품 검사</b><span id="insInfo"></span></div>
+    <p class="ins-msg" id="insMsg"></p>
+  </div>
+
+  <!-- chase mini-game: pick the right alley before time runs out -->
+  <div class="overlay chase" id="chase" hidden>
+    <img class="ch-bg" src="assets/bg/bg_alley.webp" alt="">
+    <img class="ch-det" id="chDet" src="assets/char/char_detective_stern.webp" alt="">
+    <div class="ch-head"><b>형사를 따돌려라</b><span id="chInfo"></span></div>
+    <div class="ch-time"><span id="chTime"></span></div>
+    <p class="ch-hint" id="chHint"></p>
+    <div class="ch-opts" id="chOpts"></div>
+    <p class="ch-msg" id="chMsg"></p>
+  </div>
+
   <div class="overlay daycard" id="daycard" hidden>
+    <img class="dc-img" id="dcImg" alt="" hidden>
     <div class="dc-num" id="dcNum"></div>
     <div class="dc-date" id="dcDate"></div>
     <div class="dc-place" id="dcPlace"></div>
@@ -156,18 +180,21 @@
       <img id="esCard" alt="">
     </div>
     <div class="es-right">
-      <p class="es-kicker">1화 끝</p>
-      <h2 class="es-title">공부만 잘하면 돼</h2>
+      <p class="es-kicker" id="esKicker">1화 끝</p>
+      <h2 class="es-title" id="esTitle">공부만 잘하면 돼</h2>
       <ul class="es-stats" id="esStats"></ul>
       <div class="es-ask">
         <b>생각해 볼 질문</b>
-        <span>장학생은 어떤 기준으로 뽑혔나요? 윤재가 바꿀 수 있는 기준이었나요?</span>
+        <span id="esAsk"></span>
       </div>
-      <div class="es-next">
-        <b>다음 화 · 2학기 개학</b>
-        <span>갑자기 소지품 검사가 시작된다. 윤재의 두 번째 믿음, ‘가만히 있으면 안전해’.</span>
+      <div class="es-next" id="esNextBox">
+        <b id="esNextTitle"></b>
+        <span id="esNextDesc"></span>
       </div>
-      <button class="btn" id="btnRestart" type="button">처음부터 다시</button>
+      <div class="es-btns">
+        <button class="btn" id="btnNext" type="button">다음 화로</button>
+        <button class="btn" id="btnRestart" type="button">처음부터</button>
+      </div>
     </div>
   </div>
 
@@ -181,9 +208,13 @@
     <div class="title-actions">
       <button class="btn btn-big" id="btnContinue" type="button" hidden>이어하기</button>
       <button class="btn btn-big" id="btnStart" type="button">처음부터</button>
-      <button class="btn-plain" id="btnFull" type="button">전체 화면으로</button>
+      <div class="title-row">
+        <button class="btn-plain" id="btnChapters" type="button">화 선택</button>
+        <button class="btn-plain" id="btnFull" type="button">전체 화면으로</button>
+      </div>
+      <div class="chapter-list" id="chapterList" hidden></div>
     </div>
-    <p class="title-ep">1화 · 공부만 잘하면 돼 (프로토타입)</p>
+    <p class="title-ep">프로토타입 · 1화 ~ 2화</p>
   </div>
 
   <div class="overlay loading" id="loading">
@@ -206,6 +237,7 @@
 
 </div>
 <script src="story/stage1.js"></script>
+<script src="story/stage2.js"></script>
 <script src="js/engine.js"></script>
 </body>
 </html>
