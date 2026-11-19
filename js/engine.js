@@ -849,17 +849,48 @@
     pc = saved;
   }
 
+  // popup before the map: how many moves today, where you can go, and today's note
+  function freeIntro(names, times, extra) {
+    $('fiKicker').textContent = `자유 시간 · D-${S.day}`;
+    $('fiTitle').textContent = `오늘은 ${times.length}번 움직일 수 있어요`;
+    $('fiText').textContent = `${times.join(', ')}에 지도에서 갈 곳을 하나씩 골라요. 어디에 시간을 쓰느냐에 따라 능력치, 돈, 친구와의 사이가 달라져요.`;
+    $('fiExtra').textContent = extra || '';
+    const box = $('fiSpots');
+    box.textContent = '';
+    names.forEach((n) => {
+      const sp = prog.spots[n] || { hint: '' };
+      const d = document.createElement('div');
+      d.className = 'fi-spot' + ((S.vars['방문_' + n] || 0) === 0 ? ' new' : '');
+      const b = document.createElement('b');
+      b.textContent = n;
+      const s = document.createElement('small');
+      s.textContent = sp.hint;
+      d.append(b, s);
+      box.appendChild(d);
+    });
+    $('freeintro').hidden = false;
+    return new Promise((res) => {
+      const done = (e) => { e.stopPropagation(); $('btnFreeGo').onclick = null; $('freeintro').onclick = null; $('freeintro').hidden = true; res(); };
+      $('btnFreeGo').onclick = done;
+      $('freeintro').onclick = (e) => { if (e.target.id === 'freeintro') done(e); else e.stopPropagation(); };
+    });
+  }
+
   async function explore(arg, id) {
-    const bar = arg.indexOf('|');
-    const count = Number(arg.slice(0, bar).trim()) || 3;
-    const names = arg.slice(bar + 1).trim().split(/\s+/).filter(Boolean);
+    const parts = arg.split('|');
+    const count = Number(parts[0].trim()) || 3;
+    const names = (parts[1] || '').trim().split(/\s+/).filter(Boolean);
+    const extra = parts.slice(2).join('|').trim();
     const times = TIMES.slice(TIMES.length - Math.min(count, TIMES.length));
     hideSprite('모두');
     $('dialog').hidden = true;
+    hideTip();
     for (let i = 0; i < count; i++) {
       S.time = times[i] || '저녁';
       renderTop();
-      const n = await chooseSpot(names, S.time, count - i);
+      const pick = chooseSpot(names, S.time, count - i);
+      if (i === 0) await freeIntro(names, times, extra); // popup over the map on the first move
+      const n = await pick;
       $('mapview').hidden = true;
       S.vars['방문_' + n] = (S.vars['방문_' + n] || 0) + 1;
       if (BG[n]) await setBg(n);
@@ -1482,7 +1513,7 @@
   }
 
   const OVERLAYS = ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard',
-    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase'];
+    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro'];
 
   function start(fromSave, label) {
     runId += 1;
