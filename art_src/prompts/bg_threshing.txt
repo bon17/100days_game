@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_threshing.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background, no people: the dirt farmyard of a poor thatched-roof Korean house during the autumn threshing in 1929. Straw mats covered with threshed rice grain, a row of plump straw rice sacks, a wooden threshing comb frame, a few square wooden grain measuring boxes on the mat, rice straw piled against the wall, late afternoon light. No text. Keep the center open.

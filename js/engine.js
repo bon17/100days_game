@@ -25,11 +25,14 @@
     책상: 'assets/bg/bg_desk.webp',
     취조실: 'assets/bg/bg_interrogation.webp',
     아버지기억: 'assets/bg/cg_father.webp',
+    논: 'assets/bg/bg_harvest.webp',
+    타작마당: 'assets/bg/bg_threshing.webp',
+    화물역: 'assets/bg/bg_freight.webp',
     어머니기억: 'assets/bg/cg_mother.webp',
     냇가기억: 'assets/bg/cg_stream_friends.webp',
     윤재울음: 'assets/bg/cg_yunjae_cry.webp',
   };
-  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형' };
+  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형', 감독: '동척 감독 오카다' };
   const MEMORY_CAPTION = {
     아버지기억: '새벽 논에서 허리 한 번 못 펴는 아버지',
     어머니기억: '밤새 남의 옷을 기우는 어머니',
@@ -45,6 +48,8 @@
     기철: { key: 'gicheol', scale: 1.02, faces: { 기본: 'normal', 진지: 'serious' } },
     형사: { key: 'detective', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
     다나카: { key: 'tanaka', scale: 0.98, faces: { 기본: 'normal', 비웃음: 'smirk' } },
+    아버지: { key: 'father', scale: 1.02, faces: { 기본: 'normal', 슬픔: 'sad' } },
+    감독: { key: 'overseer', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
   const STATS = {
@@ -63,14 +68,16 @@
   const CARDS = [
     { id: 'study', name: '공부', label: '공부만 잘하면 돼', truth: '실력만으로 오르는 사다리가 아니었다.', states: ['normal', 'hairline', 'cracked', 'broken'] },
     { id: 'safe', name: '안전', label: '가만히 있으면 안전해', truth: '가만히 있어도 안전하지 않았다. 감시는 아무나 노렸다.', states: ['normal', 'cracked', 'broken'] },
-    { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', states: ['normal'] },
+    { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', truth: '우리 집만 챙겨서는, 우리 집도 지킬 수 없었다.', states: ['normal', 'cracked', 'broken'] },
     { id: 'escape', name: '탈출', label: '나 하나만 빠져나가면 돼', states: ['normal'] },
     { id: 'hopeless', name: '원래', label: '태어나 보니 원래 이랬어', truth: '원래 그런 세상은 없었다. 누군가 빼앗은 것이다.', states: ['normal'] },
   ];
   const CARD_STATE = { 기본: 'normal', 실금: 'hairline', 금감: 'cracked', 깨짐: 'broken' };
   const CARD_STATE_TEXT = { hairline: '윤재의 믿음에 처음으로 실금이 갔다.', cracked: '윤재의 믿음에 금이 크게 갔다.' };
   const COMMON_TRUTH = '내가 틀린 게 아니었다. 세상이 그렇게 놔두지 않았다.';
-  const HUD = { 디데이: 'hud-dday', 장학생: 'hud-grade', 의심: 'hud-susp', 능력치: 'hud-stats', 돈: 'hud-money', 가방: 'hud-bag', 믿음: 'hud-bag', 노트: 'hud-bag' };
+  const HUD = { 디데이: 'hud-dday', 장학생: 'hud-grade', 의심: 'hud-susp', 능력치: 'hud-stats', 돈: 'hud-money', 가방: 'hud-bag', 믿음: 'hud-bag', 노트: 'hud-bag', 쌀독: 'hud-rice' };
+  const GRADE_ORDER = ['S', 'A', 'B', 'C'];
+  const TITLES = { 학업: '책벌레', 눈치: '매의 눈', 체력: '황소', 용기: '불씨' };
   const TIMES = ['오전', '오후', '저녁'];
   const SAVE_KEY = 'colony15-save-v1';
   const cardSrc = (id, st) => `assets/card/card_${id}${st === 'normal' ? '' : '_' + st}.webp`;
@@ -90,6 +97,10 @@
     if (!m) return { text, req: null };
     if (m[1] === '소지품') return { text: m[3], req: { item: m[2].trim() } };
     if (m[1] === '마음') return { text: m[3], req: { perk: m[2].trim() } };
+    if (m[1] === '판정') {
+      const [k, n] = m[2].trim().split(/\s+/);
+      return { text: m[3], req: { check: true, k, n: Number(n) || 1 } };
+    }
     return { text: m[3], req: { k: m[1], n: Number(m[2]) } };
   }
 
@@ -99,6 +110,7 @@
     const terms = {};
     const items = {};
     const spots = {};
+    const badges = {};
     const lines = src.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const t = lines[i].trim();
@@ -114,6 +126,7 @@
         const parts = arg.split('|').map((x) => x.trim());
         if (name === 'term') { if (parts[1]) terms[parts[0]] = parts.slice(1).join(' | '); continue; }
         if (name === 'itemdef') { items[parts[0]] = { img: `assets/item/${parts[1]}.webp`, desc: parts[2] || '', risk: Number(parts[3]) || 0 }; continue; }
+        if (name === 'badgedef') { badges[parts[0]] = { name: parts[1] || parts[0], desc: parts[2] || '' }; continue; }
         if (name === 'spot') { spots[parts[0]] = { x: Number(parts[1]), y: Number(parts[2]), hint: parts[3] || '' }; continue; }
         if (name === 'interrogate') {
           const qs = [];
@@ -152,9 +165,9 @@
         continue;
       }
       if (t.startsWith('?')) {
-        const m = t.slice(1).match(/^(.*?)\s*(?:\{([^}]*)\})?\s*(?:->\s*(\S+))?\s*$/);
+        const m = t.slice(1).match(/^(.*?)\s*(?:\{([^}]*)\})?\s*(?:->\s*(\S+)(?:\s*\/\s*(\S+))?)?\s*$/);
         const { text, req } = parseReq(m[1].trim());
-        const opt = { text, req, effects: parseEffects(m[2]), go: m[3] || null };
+        const opt = { text, req, effects: parseEffects(m[2]), go: m[3] || null, fail: m[4] || null };
         const last = cmds[cmds.length - 1];
         if (last && last.type === 'choice' && !last.closed) last.options.push(opt);
         else cmds.push({ type: 'choice', options: [opt] });
@@ -171,7 +184,7 @@
       if (m) { cmds.push({ type: 'say', who: m[1].trim(), face: m[2] || null, text: m[3] }); continue; }
       cmds.push({ type: 'narr', text: t });
     }
-    return { cmds, labels, terms, items, spots };
+    return { cmds, labels, terms, items, spots, badges };
   }
 
   /* ---------- state ---------- */
@@ -195,6 +208,9 @@
       time: '',
       bg: '',
       ep: 1,
+      records: {},
+      badges: [],
+      goal: null,
     };
   }
 
@@ -368,6 +384,8 @@
       if (changed === el.dataset.k) { el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); }
     });
     $('moneyVal').textContent = S.vars.돈;
+    $('riceVal').textContent = Math.max(0, S.vars.쌀 || 0);
+    renderGoal();
     $('ddayNum').textContent = 'D-' + S.day;
     $('ddayTime').textContent = S.time || '';
     const el = changed === '성적' ? $('gGrade') : changed === '의심' ? $('gSusp') : null;
@@ -411,6 +429,11 @@
         hud(['능력치']);
         renderTop(k);
         if (!quiet) toast(`${k} ${sign(ef.d)}`, STATS[k].icon);
+      } else if (k === '쌀') {
+        if (S.vars.쌀 < 0) S.vars.쌀 = 0;
+        hud(['쌀독']);
+        renderTop();
+        if (!quiet) toast(`쌀 ${sign(ef.d)}가마`, 'assets/minigame/mg_sack.webp');
       } else if (k === '돈') {
         hud(['돈']);
         renderTop('돈');
@@ -433,6 +456,8 @@
     const e = expr.trim();
     if (e.startsWith('has:')) return has(e.slice(4).trim());
     if (e.startsWith('perk:')) return S.perks.some((p) => p.name === e.slice(5).trim());
+    const pm = e.match(/^확률\s+(\d+)$/);
+    if (pm) return Math.random() * 100 < Number(pm[1]);
     const m = e.match(/^(\S+)\s*(>=|<=|==|!=|>|<)\s*(-?\d+)$/);
     if (m) {
       const v = S.vars[m[1]] || 0;
@@ -441,8 +466,12 @@
     }
     return S.flags.has(e.replace(/^flag:/, ''));
   }
+  // chance of a stat check: 55% at the required value, 15% per point above or below, 10%..95%
+  function checkChance(req) {
+    return Math.max(10, Math.min(95, 55 + ((S.vars[req.k] || 0) - req.n) * 15));
+  }
   function reqMet(req) {
-    if (!req) return true;
+    if (!req || req.check) return true;
     if (req.item) return has(req.item);
     if (req.perk) return S.perks.some((p) => p.name === req.perk);
     return (S.vars[req.k] || 0) >= req.n;
@@ -454,6 +483,7 @@
     let label = '';
     if (req.item) { icon = prog.items[req.item] ? prog.items[req.item].img : ''; label = req.item; }
     else if (req.perk) { icon = STATS.용기.icon; label = `마음: ${req.perk}`; }
+    else if (req.check) { icon = STATS[req.k] ? STATS[req.k].icon : ''; label = `${req.k} 판정 · 성공 ${checkChance(req)}%`; span.classList.add('check'); }
     else if (STATS[req.k]) { icon = STATS[req.k].icon; label = `${req.k} ${req.n}`; }
     else if (req.k === '돈') { icon = MONEY_ICON; label = `${req.n}전`; }
     else label = `${req.k} ${req.n}`;
@@ -713,7 +743,7 @@
     if (tab) bagTab = tab;
     const tabs = $('bagTabs');
     tabs.textContent = '';
-    ['윤재', '소지품', '할 일', '믿음', '역사 노트'].forEach((t) => {
+    ['윤재', '소지품', '할 일', '믿음', '역사 노트', '업적'].forEach((t) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = t;
@@ -816,6 +846,25 @@
         r.appendChild(d);
       });
       if (S.flags.has('믿음소개')) a.appendChild(r);
+    } else if (bagTab === '업적') {
+      const a = col(`업적 ${S.badges.length} / ${Object.keys(prog.badges).length}`);
+      Object.entries(prog.badges).forEach(([id, b]) => {
+        const got = S.badges.includes(id);
+        const d = document.createElement('div');
+        d.className = 'badge' + (got ? ' got' : '');
+        const n = document.createElement('b');
+        n.textContent = (got ? '★ ' : '☆ ') + b.name;
+        const s = document.createElement('small');
+        s.textContent = b.desc;
+        d.append(n, s);
+        a.appendChild(d);
+      });
+      const r = col(`모은 것`);
+      row(r, null, '역사 노트', `${S.notes.length} / ${totalNotes()}`, '');
+      row(r, null, '칭호', playerTitle(), '가장 높은 능력치로 정해져요.');
+      const recs = Object.entries(S.records);
+      if (recs.length) recs.forEach(([k, g]) => row(r, null, k, `최고 등급 ${g}`, ''));
+      else empty(r, '아직 미니게임 등급이 없어요.');
     } else {
       if (!S.notes.length) { empty(col(), '아직 역사 노트가 없어요.'); }
       else {
@@ -890,7 +939,9 @@
     $('fiKicker').textContent = `자유 시간 · D-${S.day}`;
     $('fiTitle').textContent = `오늘은 ${times.length}번 움직일 수 있어요`;
     $('fiText').textContent = `${times.join(', ')}에 지도에서 갈 곳을 하나씩 골라요. 어디에 시간을 쓰느냐에 따라 능력치, 돈, 친구와의 사이가 달라져요.`;
-    $('fiExtra').textContent = extra || '';
+    const g = S.goal;
+    const goalLine = g ? `목표: ${g.text} ${Math.min(Math.max(0, S.vars[g.k] || 0), g.n)}/${g.n}${g.k === '돈' ? '전' : ''} · D-${g.due}까지` : '';
+    $('fiExtra').textContent = [extra, goalLine].filter(Boolean).join('\n');
     const box = $('fiSpots');
     box.textContent = '';
     names.forEach((n) => {
@@ -1002,8 +1053,10 @@
     }
     const pay = ok * 2 + perfect;
     S.vars.짐결과 = ok;
+    const grade = ok >= 6 ? 'S' : ok >= 5 ? 'A' : ok >= 3 ? 'B' : 'C';
+    recordGrade('짐나르기', grade);
     msg.className = 'cr-msg good';
-    msg.textContent = `가마니 ${ok}개를 날랐다. 품삯 ${pay}전 · 화면을 눌러 계속`;
+    msg.textContent = `가마니 ${ok}개를 날랐다. 품삯 ${pay}전 · 등급 ${grade} · 화면을 눌러 계속`;
     await new Promise((res) => { carryDrop = () => { carryDrop = null; res(); }; });
     box.onclick = null;
     box.hidden = true;
@@ -1515,6 +1568,290 @@
     box.hidden = true;
   }
 
+  /* ---------- RPG helpers: stat checks, goals, badges, grades ---------- */
+  async function rollCheck(req) {
+    const chance = checkChance(req);
+    const box = $('dice');
+    const num = $('diceNum');
+    const res = $('diceRes');
+    $('diceTitle').textContent = `${req.k} 판정 · 성공 확률 ${chance}%`;
+    $('diceRule').textContent = `1~100 사이 숫자가 ${chance} 이하로 나오면 성공`;
+    res.textContent = '';
+    res.className = 'dice-res';
+    box.hidden = false;
+    const roll = 1 + Math.floor(Math.random() * 100);
+    const t0 = performance.now();
+    await new Promise((done) => {
+      const tick = () => {
+        if (performance.now() - t0 < 900) { num.textContent = 1 + Math.floor(Math.random() * 100); requestAnimationFrame(tick); }
+        else done();
+      };
+      tick();
+    });
+    num.textContent = roll;
+    const ok = roll <= chance;
+    res.textContent = ok ? '성공!' : '실패…';
+    res.classList.add(ok ? 'ok' : 'no');
+    await sleep(1200);
+    box.hidden = true;
+    return ok;
+  }
+
+  function renderGoal() {
+    const el = $('goal');
+    const g = S && S.goal;
+    if (!g) { el.hidden = true; return; }
+    const cur = Math.max(0, S.vars[g.k] || 0);
+    const unit = g.k === '돈' ? '전' : g.k === '쌀' ? '가마' : '';
+    $('goalText').textContent = `${g.text} ${Math.min(cur, g.n)}/${g.n}${unit} · D-${g.due}까지`;
+    el.classList.toggle('met', cur >= g.n);
+    el.hidden = false;
+  }
+
+  function unlockBadge(id, quiet) {
+    const def = prog.badges[id];
+    if (!def || S.badges.includes(id)) return;
+    S.badges.push(id);
+    if (!quiet) { toast(`업적 달성 · ${def.name}`); hud(['가방']); flashBag(); }
+  }
+
+  function recordGrade(game, grade) {
+    const prev = S.records[game];
+    if (!prev || GRADE_ORDER.indexOf(grade) < GRADE_ORDER.indexOf(prev)) S.records[game] = grade;
+    if (grade === 'S') unlockBadge('S_' + game);
+  }
+
+  function totalNotes() {
+    return new Set(prog.cmds.filter((c) => c.type === 'note').map((c) => c.arg.split('|')[0].trim())).size;
+  }
+
+  function playerTitle() {
+    let best = '학업';
+    Object.keys(STATS).forEach((k) => { if ((S.vars[k] || 0) > (S.vars[best] || 0)) best = k; });
+    return TITLES[best];
+  }
+
+  // shared briefing popup for mini-games: resolves when the player taps Start
+  function briefing(boxId, btnId) {
+    $(boxId).hidden = false;
+    return new Promise((res) => {
+      $(btnId).onclick = (e) => { e.stopPropagation(); $(btnId).onclick = null; $(boxId).hidden = true; res(); };
+    });
+  }
+  function waitBoxTap(box) {
+    return new Promise((res) => { box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); }; });
+  }
+
+  /* ---------- episode 3 mini-game: reaping rice ---------- */
+  async function reapGame() {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('reap');
+    const stack = $('rpStack');
+    const needle = $('rpNeedle');
+    const zone = $('rpZone');
+    const msg = $('rpMsg');
+    stack.textContent = '';
+    msg.textContent = '';
+    $('rpInfo').textContent = '';
+    box.hidden = false;
+    await briefing('rpBrief', 'btnRpStart');
+    const swings = 10;
+    const width = Math.min(32, 14 + 2 * Math.max(0, S.vars.체력 || 0));
+    let bundles = 0;
+    for (let n = 0; n < swings; n++) {
+      $('rpInfo').textContent = `${n + 1} / ${swings} · 볏단 ${bundles}`;
+      const center = 25 + Math.random() * 50;
+      zone.style.left = center - width / 2 + '%';
+      zone.style.width = width + '%';
+      const speed = 1.6 + n * 0.12;
+      const t0 = performance.now();
+      let p = 0;
+      msg.textContent = '노란 칸에 왔을 때 화면을 누르세요';
+      await new Promise((res) => {
+        let raf = 0;
+        const loop = (now) => {
+          p = 50 + 48 * Math.sin(((now - t0) / 1000) * speed * 2);
+          needle.style.left = p + '%';
+          raf = requestAnimationFrame(loop);
+        };
+        raf = requestAnimationFrame(loop);
+        box.onclick = (e) => { e.stopPropagation(); box.onclick = null; cancelAnimationFrame(raf); res(); };
+      });
+      const off = Math.abs(p - center);
+      const got = off <= width / 6 ? 2 : off <= width / 2 ? 1 : 0;
+      bundles += got;
+      for (let i = 0; i < got; i++) {
+        const im = document.createElement('img');
+        im.src = 'assets/minigame/mg_ricebundle.webp';
+        im.alt = '';
+        stack.appendChild(im);
+      }
+      msg.textContent = got === 2 ? '쓱싹! 단번에 두 단' : got === 1 ? '한 단 베었다' : '헛손질…';
+      $('rpInfo').textContent = `${n + 1} / ${swings} · 볏단 ${bundles}`;
+      await sleep(520);
+    }
+    const harvest = 14 + Math.round(bundles / 2);
+    const grade = bundles >= 18 ? 'S' : bundles >= 13 ? 'A' : bundles >= 8 ? 'B' : 'C';
+    S.vars.수확 = harvest;
+    recordGrade('벼베기', grade);
+    msg.textContent = `벼 ${harvest}가마를 거두었다 · 등급 ${grade} · 화면을 눌러 계속`;
+    await waitBoxTap(box);
+    box.hidden = true;
+  }
+
+  /* ---------- episode 3 mini-game: spot the oversized measuring box ---------- */
+  async function measureGame() {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('measure');
+    const row = $('msRow');
+    const msg = $('msMsg');
+    const bar = $('msTime');
+    row.textContent = '';
+    msg.textContent = '';
+    $('msInfo').textContent = '';
+    box.hidden = false;
+    await briefing('msBrief', 'btnMsStart');
+    const rounds = 5;
+    const secs = Math.max(3.5, Math.min(6.5, 4.5 + 0.5 * ((S.vars.눈치 || 0) - 2)));
+    const hintOn = (S.vars.눈치 || 0) >= 3;
+    let caught = 0;
+    for (let r = 0; r < rounds; r++) {
+      $('msInfo').textContent = `${r + 1} / ${rounds} · 지킨 쌀 ${caught}가마`;
+      msg.textContent = '조금 더 큰 되를 찾아 누르세요';
+      const big = Math.floor(Math.random() * 3);
+      const scale = 1.27 - r * 0.03;
+      row.textContent = '';
+      const btns = [0, 1, 2].map((i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ms-box';
+        b.innerHTML = '<img alt="되" src="assets/minigame/mg_measure.webp">';
+        const img = b.querySelector('img');
+        img.style.setProperty('--s', i === big ? scale : 1);
+        img.style.setProperty('--r', (Math.random() * 8 - 4).toFixed(1) + 'deg');
+        b.style.marginTop = (Math.random() * 6 - 3).toFixed(1) + 'vh';
+        row.appendChild(b);
+        return b;
+      });
+      const pick = await new Promise((res) => {
+        const t0 = performance.now();
+        let hinted = false;
+        const tick = setInterval(() => {
+          const left = Math.max(0, secs * 1000 - (performance.now() - t0));
+          bar.style.width = (100 * left) / (secs * 1000) + '%';
+          if (hintOn && !hinted && left < secs * 450) { hinted = true; btns[big].classList.add('hint'); }
+          if (left <= 0) { clearInterval(tick); res(-1); }
+        }, 50);
+        btns.forEach((b, i) => b.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(i); }));
+      });
+      btns.forEach((b) => b.classList.remove('hint'));
+      if (pick === big) {
+        caught += 1;
+        btns[pick].classList.add('right');
+        msg.textContent = '속임수 간파! 쌀 한 가마를 지켰다';
+      } else {
+        btns[big].classList.add('right');
+        if (pick >= 0) btns[pick].classList.add('wrong');
+        msg.textContent = pick < 0 ? '놓쳤다… 큰 되로 한 가마를 더 퍼 갔다' : '그건 보통 되였다… 큰 되는 저것!';
+      }
+      $('msInfo').textContent = `${r + 1} / ${rounds} · 지킨 쌀 ${caught}가마`;
+      await sleep(1100);
+    }
+    const grade = caught >= 5 ? 'S' : caught >= 4 ? 'A' : caught >= 2 ? 'B' : 'C';
+    S.vars.되질지킴 = caught;
+    recordGrade('되질감시', grade);
+    row.textContent = '';
+    msg.textContent = `속임수 ${rounds}번 중 ${caught}번을 잡아냈다 · 등급 ${grade} · 화면을 눌러 계속`;
+    await waitBoxTap(box);
+    box.hidden = true;
+  }
+
+  /* ---------- episode 3 mini-game: share out the harvest, see how long it lasts ---------- */
+  async function splitGame() {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('split');
+    const harvest = S.vars.수확 || 18;
+    const caught = S.vars.되질지킴 || 0;
+    const rent = Math.round(harvest * 0.6);
+    const cheat = 5 - caught;
+    const left = Math.max(3, harvest - rent - cheat - 2);
+    const fee = 20;
+    const DAYS = 12;
+    const NEED = 126;            // Sep 26, 1929 (threshing day) -> Lunar New Year, Jan 30, 1930
+    let debt = 0;
+    let sell = 0;
+    const moneyNow = Math.max(0, S.vars.돈 || 0);
+    $('spTitle').textContent = '설날까지 버텨라';
+    $('spLedger').innerHTML = `
+      <span>거둔 쌀</span><span>${harvest}가마</span>
+      <span>소작료 6할 (동척)</span><span class="neg">−${rent}가마</span>
+      <span>큰 되 속임수</span><span class="neg">−${cheat}가마</span>
+      <span>비료·종자값 (동척에서 빌린 것)</span><span class="neg">−2가마</span>
+      <span class="sum">우리 집에 남은 쌀</span><span class="sum">${left}가마</span>`;
+    $('spShort').innerHTML = `거둔 쌀 ${harvest} <i>− 소작료 ${rent} − 속임수 ${cheat} − 비료·종자 2</i> = <b>남은 쌀 ${left}가마</b>`;
+    const dateOf = (days) => { const d = new Date(1929, 8, 26); d.setDate(d.getDate() + days); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+    const render = () => {
+      const food = left - debt - sell;
+      const bins = $('spBins');
+      bins.innerHTML = '';
+      const mk = (name, desc, val, onMinus, onPlus, canMinus, canPlus) => {
+        const d = document.createElement('div');
+        d.className = 'sp-bin';
+        d.innerHTML = `<b>${name}</b><div class="sp-ctrl"><button type="button" aria-label="빼기">−</button><span>${val}</span><button type="button" aria-label="더하기">+</button></div><small>${desc}</small>`;
+        const [m, p] = d.querySelectorAll('button');
+        m.disabled = !canMinus;
+        p.disabled = !canPlus;
+        m.addEventListener('click', (e) => { e.stopPropagation(); onMinus(); render(); });
+        p.addEventListener('click', (e) => { e.stopPropagation(); onPlus(); render(); });
+        bins.appendChild(d);
+      };
+      const d = document.createElement('div');
+      d.className = 'sp-bin';
+      d.innerHTML = `<b>겨울 양식</b><div class="sp-ctrl"><span>${food}</span></div><small>한 가마로 다섯 식구가 ${DAYS}일을 버텨요. 나머지 쌀은 모두 여기로.</small>`;
+      $('spBins').appendChild(d);
+      mk('장리쌀 빚 갚기', '봄에 빌린 쌀 2가마. 못 갚으면 내년에 이자가 붙어요.', debt,
+        () => { debt -= 1; }, () => { debt += 1; }, debt > 0, food > 0 && debt < 2);
+      mk('팔아서 수리조합비', `한 가마에 5전. 지금 돈 ${moneyNow}전, 필요한 돈 ${fee}전.`, sell,
+        () => { sell -= 1; }, () => { sell += 1; }, sell > 0, food > 0);
+      const days = food * DAYS;
+      $('spFill').style.width = Math.min(100, (100 * days) / NEED) + '%';
+      $('spCalText').textContent = `쌀독이 바닥나는 날: ${dateOf(days)} · 설날까지 ${Math.max(0, NEED - days)}일 모자라요`;
+      const warn = [];
+      if (debt < 2) warn.push('빚을 다 못 갚으면 내년 봄 이자가 붙어요.');
+      if (moneyNow + sell * 5 < fee) warn.push(`수리조합비가 ${fee - moneyNow - sell * 5}전 모자라요. D-30까지 직접 벌어야 해요.`);
+      $('spWarn').textContent = warn.join('\n');
+    };
+    render();
+    box.hidden = false;
+    await new Promise((res) => { $('btnSpDone').onclick = (e) => { e.stopPropagation(); $('btnSpDone').onclick = null; res(); }; });
+    const food = left - debt - sell;
+    const needSell = Math.max(0, Math.ceil((fee - moneyNow) / 5));
+    const best = Math.max(0, left - 2 - needSell);
+    const paidDebt = debt >= 2;
+    const feeOk = moneyNow + sell * 5 >= fee;
+    const grade = paidDebt && feeOk ? (food >= best ? 'S' : 'A') : paidDebt || feeOk ? 'B' : 'C';
+    recordGrade('쌀나누기', grade);
+    S.vars.쌀 = food;
+    S.vars.쌀판것 = sell;
+    if (sell) applyEffects([{ v: '돈', d: sell * 5 }]);
+    if (paidDebt) S.flags.add('빚갚음');
+    hud(['쌀독']);
+    renderTop();
+    $('spTitle').textContent = `등급 ${grade}`;
+    $('spBins').innerHTML = '';
+    $('spWarn').textContent = '';
+    $('spCalText').textContent = `${dateOf(food * DAYS)}, 쌀독이 바닥나요. 설날까지 ${Math.max(0, NEED - food * DAYS)}일 모자라요.\n윤재가 잘못 나눈 게 아니에요. 처음부터 모자랐어요.`;
+    $('spCalText').style.whiteSpace = 'pre-line';
+    $('btnSpDone').textContent = '계속';
+    await new Promise((res) => { $('btnSpDone').onclick = (e) => { e.stopPropagation(); $('btnSpDone').onclick = null; res(); }; });
+    $('btnSpDone').textContent = '이대로 나누기';
+    $('spCalText').style.whiteSpace = '';
+    box.hidden = true;
+  }
+
   /* ---------- chapter title and chapter end ---------- */
   async function chapterCard(arg) {
     const [num, title, cardName] = arg.split('|').map((x) => x.trim());
@@ -1549,6 +1886,12 @@
     ];
     ['정희', '진수', '기철'].forEach((k) => { if (S.flags.has('만남_' + k)) stats.push([RELS[k].name, hearts(k)]); });
     if (S.perks.length) stats.push(['새로운 마음', S.perks.map((p) => p.name).join(', ')]);
+    stats.push(['역사 노트', `${S.notes.length} / ${totalNotes()}`]);
+    const nb = Object.keys(prog.badges).length;
+    if (nb) stats.push(['업적', `${S.badges.length} / ${nb}`]);
+    const rec = Object.entries(S.records).map(([k, g]) => `${k} ${g}`).join(' · ');
+    if (rec) stats.push(['미니게임 등급', rec]);
+    stats.push(['칭호', playerTitle()]);
     return stats;
   }
 
@@ -1623,6 +1966,7 @@
       const data = {
         pc: atPc, vars: S.vars, flags: [...S.flags], cards: S.cards, seenTerms: [...S.seenTerms],
         notes: S.notes, items: S.items, perks: S.perks, quests: S.quests, hud: hudList(), day: S.day, bg: S.bg, ep: S.ep,
+        records: S.records, badges: S.badges, goal: S.goal,
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (err) { /* storage may be unavailable */ }
@@ -1649,6 +1993,12 @@
       case 'narr': highlight(null); return speak('narr', '', c.text);
       case 'choice': {
         const o = await choose(c.options);
+        if (o.req && o.req.check) {
+          const ok = await rollCheck(o.req);
+          if (ok) { applyEffects(o.effects); if (o.go) pc = labelAt(o.go); }
+          else if (o.fail) pc = labelAt(o.fail);
+          return;
+        }
         applyEffects(o.effects);
         if (o.go) pc = labelAt(o.go);
         return;
@@ -1682,7 +2032,16 @@
         $('btnSkip').hidden = !skipTarget;
         return;
       }
-      case 'note': return noteEvent(c.arg, c.quiet);
+      case 'note': { const r = noteEvent(c.arg, c.quiet); S.vars.노트수 = S.notes.length; return r; }
+      case 'unlock': unlockBadge(c.arg.trim(), c.quiet); return sleep(c.quiet ? 0 : 300);
+      case 'goal': {
+        const [id, text, k, n, due] = c.arg.split('|').map((x) => x.trim());
+        S.goal = { id, text, k, n: Number(n) || 0, due: Number(due) || 0 };
+        renderGoal();
+        if (!c.quiet) toast(`목표: ${text}`);
+        return sleep(c.quiet ? 0 : 300);
+      }
+      case 'goalend': S.goal = null; renderGoal(); return;
       case 'perk': return perkEvent(c.arg, c.quiet);
       case 'set': {
         const [k, v] = c.arg.split(/\s+/);
@@ -1700,6 +2059,9 @@
       case 'inspect': return inspectGame(c.arg);
       case 'chase': return chaseGame(c.arg);
       case 'interrogate': return interrogate(c);
+      case 'reap': return reapGame();
+      case 'measure': return measureGame();
+      case 'ricesplit': return splitGame();
       case 'waver': return waver(c.arg);
       case 'get': {
         const name = c.arg.trim();
@@ -1771,7 +2133,7 @@
   }
 
   const OVERLAYS = ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard',
-    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro', 'interro'];
+    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro', 'interro', 'dice', 'reap', 'measure', 'split'];
 
   function start(fromSave, label) {
     runId += 1;
@@ -1799,6 +2161,9 @@
       S.quests = fromSave.quests;
       S.day = fromSave.day;
       S.ep = fromSave.ep || 1;
+      S.records = fromSave.records || {};
+      S.badges = fromSave.badges || [];
+      S.goal = fromSave.goal || null;
       fromSave.hud.forEach((c) => $('game').classList.add(c));
       $('game').classList.toggle('hud-any', fromSave.hud.length > 0);
       if (fromSave.bg) setBg(fromSave.bg);
@@ -1820,7 +2185,7 @@
   }
 
   async function boot() {
-    prog = parse([window.STORY_STAGE1, window.STORY_STAGE2, window.STORY_STAGE3].filter(Boolean).join('\n'));
+    prog = parse([window.STORY_STAGE1, window.STORY_STAGE2, window.STORY_STAGE3, window.STORY_STAGE4].filter(Boolean).join('\n'));
     buildTermRe();
     buildStatChips();
     S = newState();
@@ -1835,6 +2200,7 @@
       'assets/ui/ui_dialog.webp', 'assets/ui/ui_button.webp', 'assets/ui/ui_topbar.webp', 'assets/ui/ui_notebook.webp',
       'assets/minigame/mg_exam_paper.webp', 'assets/minigame/mg_stamp_o.webp', 'assets/minigame/mg_stamp_x.webp',
       'assets/minigame/mg_timer.webp', 'assets/minigame/mg_sack.webp', 'assets/minigame/mg_jige.webp',
+      'assets/minigame/mg_measure.webp', 'assets/minigame/mg_ricebundle.webp',
     ];
     await preload(list, (p) => {
       $('ldFill').style.width = Math.round(p * 100) + '%';

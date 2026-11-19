@@ -27,6 +27,7 @@
     </div>
     <div class="stats" id="stats"></div>
     <div class="money" id="money"><img src="assets/ui/icon_money.webp" alt=""><b id="moneyVal">0</b><span>전</span></div>
+    <div class="rice" id="rice"><img src="assets/minigame/mg_sack.webp" alt=""><b id="riceVal">0</b><span>가마</span></div>
     <div class="gauges">
       <div class="gauge" id="gGrade"><span class="g-label">장학생</span><span class="g-track"><span class="g-fill"></span></span></div>
       <div class="gauge warn" id="gSusp"><span class="g-label">의심</span><span class="g-track"><span class="g-fill"></span></span></div>
@@ -39,6 +40,84 @@
     <p class="line" id="line"></p>
     <span class="next" aria-hidden="true">▼</span>
   </section>
+
+  <div class="goal" id="goal" hidden><b>목표</b><span id="goalText"></span></div>
+
+  <div class="overlay dice" id="dice" hidden>
+    <div class="dice-card">
+      <p class="dice-title" id="diceTitle"></p>
+      <div class="dice-num" id="diceNum"></div>
+      <p class="dice-rule" id="diceRule"></p>
+      <p class="dice-res" id="diceRes"></p>
+    </div>
+  </div>
+
+  <!-- episode 3 mini-game: reaping rice with timed swings -->
+  <div class="overlay reap" id="reap" hidden>
+    <img class="mg-bg" src="assets/bg/bg_harvest.webp" alt="">
+    <div class="ch-head"><b>벼 베기</b><span id="rpInfo"></span></div>
+    <div class="rp-stack" id="rpStack"></div>
+    <div class="rp-bar" id="rpBar"><div class="rp-zone" id="rpZone"><i></i></div><div class="rp-needle" id="rpNeedle"></div></div>
+    <p class="ch-msg rp-msg" id="rpMsg"></p>
+    <div class="ins-brief" id="rpBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 벼 베기</p>
+          <h2 class="note-title">아버지와 함께 벼를 베어라</h2>
+          <ol class="brief-steps">
+            <li>아래 막대에서 낫 표시가 좌우로 움직인다</li>
+            <li>낫 표시가 <b>노란 칸</b> 안에 왔을 때 화면을 누르면 벤다. 가운데 진한 칸이면 두 단!</li>
+            <li>10번 베어서 볏단을 많이 모을수록 수확이 늘어난다. 체력이 높으면 노란 칸이 넓어진다</li>
+          </ol>
+          <button class="btn fi-go" id="btnRpStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- episode 3 mini-game: spot the oversized measuring box -->
+  <div class="overlay measure" id="measure" hidden>
+    <img class="mg-bg" src="assets/bg/bg_threshing.webp" alt="">
+    <img class="ms-ov" src="assets/char/char_overseer_normal.webp" alt="">
+    <div class="ch-head"><b>되질 감시</b><span id="msInfo"></span></div>
+    <div class="it-time ms-time"><span id="msTime"></span></div>
+    <div class="ms-row" id="msRow"></div>
+    <p class="ch-msg ms-msg" id="msMsg"></p>
+    <div class="ins-brief" id="msBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 되질 감시</p>
+          <h2 class="note-title">속임수 되를 찾아라</h2>
+          <p class="fi-text">동척 감독이 소작료로 쌀을 되로 퍼 간다. 그런데 되 하나가 몰래 더 크다.</p>
+          <ol class="brief-steps">
+            <li>되 세 개 중 <b>조금 더 큰 되</b>를 찾아 누른다</li>
+            <li>찾아내면 쌀 한 가마를 지킨다. 놓치면 한 가마를 더 빼앗긴다</li>
+            <li>모두 다섯 번. 눈치가 높으면 시간이 늘고, 큰 되가 살짝 빛난다</li>
+          </ol>
+          <button class="btn fi-go" id="btnMsStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- episode 3 mini-game: share out what is left of the harvest -->
+  <div class="overlay split" id="split" hidden>
+    <div class="note-panel split-panel">
+      <div class="note-body">
+        <p class="note-kicker">미니게임 · 쌀 나누기</p>
+        <h2 class="note-title" id="spTitle">설날까지 버텨라</h2>
+        <div class="sp-ledger" id="spLedger"></div>
+        <p class="sp-short" id="spShort"></p>
+        <div class="sp-bins" id="spBins"></div>
+        <div class="sp-cal">
+          <div class="sp-bar"><span id="spFill"></span><i>설날</i></div>
+          <p class="sp-cal-text" id="spCalText"></p>
+        </div>
+        <p class="sp-warn" id="spWarn"></p>
+        <button class="btn fi-go" id="btnSpDone" type="button">이대로 나누기</button>
+      </div>
+    </div>
+  </div>
 
   <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
   <div class="choices" id="choices" hidden></div>
@@ -274,7 +353,7 @@
       </div>
       <div class="chapter-list" id="chapterList" hidden></div>
     </div>
-    <p class="title-ep">프로토타입 · 1화 ~ 2화</p>
+    <p class="title-ep">프로토타입 · 1화 ~ 3화</p>
   </div>
 
   <div class="overlay loading" id="loading">
@@ -298,6 +377,7 @@
 </div>
 <script src="story/stage1.js"></script>
 <script src="story/stage2.js"></script>
+<script src="story/stage3.js"></script>
 <script src="js/engine.js"></script>
 </body>
 </html>

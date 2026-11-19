@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_freight.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background: a railway freight platform in Gwangju in autumn 1929. Open freight cars piled high with straw rice sacks, Korean porters carrying sacks on their backs up a plank into the cars, a Japanese railway official in a dark uniform and cap supervising with a clipboard, steam from the locomotive. On the far side, a line of thin Korean women in plain hanbok waiting at a small grain shop with baskets. Realistic dignified people, no text, all signs blank. Keep the center open.
