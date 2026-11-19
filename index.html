@@ -119,17 +119,62 @@
     <img class="ins-det" id="insDet" src="assets/char/char_detective_stern.webp" alt="">
     <div class="ins-head"><b>소지품 검사</b><span id="insInfo"></span></div>
     <p class="ins-msg" id="insMsg"></p>
+    <div class="ins-brief" id="insBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 소지품 검사</p>
+          <h2 class="note-title">형사가 오기 전에 숨겨라</h2>
+          <p class="fi-text" id="insBriefText"></p>
+          <div class="brief-items" id="insBriefItems"></div>
+          <ol class="brief-steps">
+            <li>빨간 <b>위험</b> 표시가 붙은 물건을 누른다</li>
+            <li>도시락통이나 서랍 밑 같은 숨길 곳을 누른다</li>
+            <li>시간이 끝나면 형사가 가방에 남은 물건을 뒤진다</li>
+          </ol>
+          <button class="btn fi-go" id="btnInsStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- chase mini-game: pick the right alley before time runs out -->
+  <!-- chase mini-game: top-down alley map, the detective moves after every step -->
   <div class="overlay chase" id="chase" hidden>
-    <img class="ch-bg" src="assets/bg/bg_alley.webp" alt="">
-    <img class="ch-det" id="chDet" src="assets/char/char_detective_stern.webp" alt="">
+    <div class="ch-box" id="chBox">
+      <img class="ch-map" src="assets/bg/map_alley.webp" alt="">
+      <div class="ch-nodes" id="chNodes"></div>
+    </div>
     <div class="ch-head"><b>형사를 따돌려라</b><span id="chInfo"></span></div>
-    <div class="ch-time"><span id="chTime"></span></div>
-    <p class="ch-hint" id="chHint"></p>
-    <div class="ch-opts" id="chOpts"></div>
+    <div class="ch-tools" id="chTools"></div>
     <p class="ch-msg" id="chMsg"></p>
+    <div class="ins-brief" id="chBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 골목 추격</p>
+          <h2 class="note-title">집 대문까지 도망쳐라</h2>
+          <ol class="brief-steps">
+            <li>빛나는 동그라미를 눌러 옆 골목으로 한 칸 움직인다</li>
+            <li>윤재가 움직이면 <b>사토 형사</b>도 한 칸 따라온다. 네 번에 한 번은 두 칸을 뛴다</li>
+            <li id="chBriefHide">장독대·짚더미 같은 곳에서는 <b>숨기</b>를 쓸 수 있다. 형사가 잠시 길을 잃는다</li>
+            <li id="chBriefRun">체력이 4 이상이면 <b>전력 질주</b>로 한 번에 두 칸 갈 수 있다</li>
+          </ol>
+          <button class="btn fi-go" id="btnChStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- interrogation mini-game: timed answers under pressure -->
+  <div class="overlay interro" id="interro" hidden>
+    <img class="it-bg" src="assets/bg/bg_interrogation.webp" alt="">
+    <img class="it-det" id="itDet" src="assets/char/char_detective_stern.webp" alt="">
+    <div class="it-flash" id="itFlash"></div>
+    <div class="ch-head"><b>심문</b><span id="itInfo"></span></div>
+    <div class="it-time"><span id="itTime"></span></div>
+    <div class="it-box">
+      <div class="nametag">사토 형사</div>
+      <p class="it-q" id="itQ"></p>
+    </div>
+    <div class="it-opts" id="itOpts"></div>
   </div>
 
   <div class="overlay daycard" id="daycard" hidden>
@@ -164,6 +209,7 @@
   </div>
 
   <div class="overlay exam" id="exam" hidden>
+    <img class="ex-flash" id="exFlash" alt="" hidden>
     <div class="ex-head">
       <span class="ex-part" id="exPart"></span>
       <span class="ex-prog" id="exProg"></span>

@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./cg_mother.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+A hazy memory flashback illustration: soft blurred edges fading into warm sepia, slightly washed-out like an old photograph, dreamy light. No text. Scene: late at night inside a small thatched-roof Korean house, a tired Korean mother in a plain hanbok sitting on the floor sewing other people's clothes by the light of a tiny oil lamp, a pile of garments beside her, her shadow large on the paper-screen door. Seen from the side.

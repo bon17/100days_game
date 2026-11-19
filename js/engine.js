@@ -23,16 +23,22 @@
     만식네: 'assets/bg/bg_poorhouse.webp',
     골목: 'assets/bg/bg_alley.webp',
     책상: 'assets/bg/bg_desk.webp',
+    취조실: 'assets/bg/bg_interrogation.webp',
+    아버지기억: 'assets/bg/cg_father.webp',
+    어머니기억: 'assets/bg/cg_mother.webp',
+    냇가기억: 'assets/bg/cg_stream_friends.webp',
   };
+  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형' };
   const CHARS = {
     윤재: { key: 'yunjae', scale: 1, faces: { 기본: 'normal', 웃음: 'smile', 놀람: 'surprised', 화남: 'angry', 슬픔: 'sad' } },
-    만식: { key: 'mansik', scale: 0.84, faces: { 기본: 'normal', 웃음: 'smile', 걱정: 'worried' } },
+    만식: { key: 'mansik', scale: 0.84, faces: { 기본: 'normal', 웃음: 'smile', 걱정: 'worried', 멍: 'bruised' } },
     교장: { key: 'principal', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
     교관: { key: 'instructor', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
     진수: { key: 'senior', scale: 1.02, faces: { 기본: 'normal', 씁쓸: 'bitter' } },
     정희: { key: 'junghee', scale: 0.97, faces: { 기본: 'normal', 웃음: 'smile', 걱정: 'worried' } },
     기철: { key: 'gicheol', scale: 1.02, faces: { 기본: 'normal', 진지: 'serious' } },
     형사: { key: 'detective', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
+    다나카: { key: 'tanaka', scale: 0.98, faces: { 기본: 'normal', 비웃음: 'smirk' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
   const STATS = {
@@ -103,11 +109,24 @@
         if (name === 'term') { if (parts[1]) terms[parts[0]] = parts.slice(1).join(' | '); continue; }
         if (name === 'itemdef') { items[parts[0]] = { img: `assets/item/${parts[1]}.webp`, desc: parts[2] || '', risk: Number(parts[3]) || 0 }; continue; }
         if (name === 'spot') { spots[parts[0]] = { x: Number(parts[1]), y: Number(parts[2]), hint: parts[3] || '' }; continue; }
+        if (name === 'interrogate') {
+          const qs = [];
+          while (++i < lines.length && lines[i].trim() !== '@endinterrogate') {
+            const l = lines[i].trim();
+            if (l.startsWith('Q ')) { const [text, ...answers] = l.slice(2).split('|').map((x) => x.trim()); qs.push({ text, answers, reply: '' }); }
+            else if (l.startsWith('R ') && qs.length) qs[qs.length - 1].reply = l.slice(2).trim();
+          }
+          cmds.push({ type: 'interrogate', qs });
+          continue;
+        }
         if (name === 'exam') {
           const qs = [];
           while (++i < lines.length && lines[i].trim() !== '@endexam') {
             const m = lines[i].trim().match(/^Q\s+([OX])\s*\|\s*(.+)$/);
-            if (m) qs.push({ ans: m[1], text: m[2] });
+            if (m) {
+              const [text, flash] = m[2].split('|').map((x) => x.trim());
+              qs.push({ ans: m[1], text, flash: flash || null });
+            }
           }
           cmds.push({ type: 'exam', key: parts[0], title: parts[1], secs: Number(parts[2]) || 6, qs });
           continue;
@@ -993,6 +1012,12 @@
       const q = c.qs[qi];
       $('exProg').textContent = `${qi + 1} / ${c.qs.length}` + (bonus ? ` · 학업 보너스 +${bonus}초` : '');
       $('exQ').textContent = q.text;
+      const fl = $('exFlash');
+      if (q.flash && BG[q.flash]) {
+        fl.src = BG[q.flash];
+        fl.hidden = false;
+        fl.style.animation = 'none'; void fl.offsetWidth; fl.style.animation = '';
+      } else fl.hidden = true;
       stamp.hidden = true;
       fb.textContent = '';
       btnO.disabled = false;
@@ -1034,6 +1059,7 @@
       await sleep(1100);
     }
     S.vars[c.key] = (S.vars[c.key] || 0) + correct;
+    $('exFlash').hidden = true;
     $('exQ').textContent = `${c.title} 끝\n${c.qs.length}문제 중 ${correct}문제가 시험 정답과 같았다.`;
     stamp.hidden = true;
     fb.textContent = '화면을 눌러 계속';
@@ -1048,16 +1074,18 @@
     const myStudy = Math.min(99, 84 + 2 * S.vars.학과 + 2 * Math.max(0, S.vars.학업 - 3));
     const myCivic = 25 * S.vars.수신;
     const rows = [
-      { name: '김덕수', study: 72, civic: 100, conduct: '갑', rank: 1 },
-      { name: '박기천', study: 80, civic: 100, conduct: '갑', rank: 2 },
-      { name: '윤재', study: myStudy, civic: myCivic, conduct: '을', rank: 3, me: true },
+      { name: '다나카', who: '내지인', study: 61, civic: 100, conduct: '갑', rank: '1 · 합격' },
+      { name: '야마모토', who: '내지인', study: 66, civic: 100, conduct: '갑', rank: '2 · 합격' },
+      { name: '스즈키', who: '내지인', study: 58, civic: 75, conduct: '갑', rank: '3 · 합격' },
+      { name: '윤재', who: '조선인', study: myStudy, civic: myCivic, conduct: '을', rank: '4', me: true },
+      { name: '박기천', who: '조선인', study: 80, civic: 100, conduct: '을', rank: '5' },
     ];
     $('rsTitle').textContent = '1929년도 전라남도 장학생 후보 · 중간 순위';
-    $('rsSub').textContent = '조선인 학생 장학생 정원 2명';
+    $('rsSub').textContent = '장학생 3명 · 내지인(일본인) 먼저 선발';
     $('rsTable').innerHTML =
-      '<tr><th>이름</th><th>학과</th><th>수신</th><th>품행</th><th>순위</th></tr>' +
-      rows.map((r) => `<tr class="${r.me ? 'me' : ''}"><td>${r.name}</td><td class="${r.me ? 'best' : ''}">${r.study}</td><td>${r.civic}</td><td>${r.conduct}</td><td>${r.rank}</td></tr>`).join('');
-    $('rsNote').textContent = '※ 순위는 품행 평가를 먼저 반영함. 일본인 학생 장학생 정원 12명은 별도로 선발함.';
+      '<tr><th>이름</th><th>구분</th><th>학과</th><th>수신</th><th>품행</th><th>순위</th></tr>' +
+      rows.map((r) => `<tr class="${r.me ? 'me' : ''}${r.who === '내지인' ? ' jp' : ''}"><td>${r.name}</td><td>${r.who}</td><td class="${r.me ? 'best' : ''}">${r.study}</td><td>${r.civic}</td><td>${r.conduct}</td><td>${r.rank}</td></tr>`).join('');
+    $('rsNote').textContent = '※ 내지인 학생을 먼저 선발함. 조선인 학생은 품행 \'갑\'인 경우에만 선발함.';
     $('result').hidden = false;
     await sleep(600);
     await waitTap();
@@ -1124,7 +1152,8 @@
       b.type = 'button';
       b.className = 'ins-item' + (sel === n ? ' sel' : '');
       const meta = prog.items[n] || {};
-      b.innerHTML = `<img alt="" src="${meta.img || ''}"><span></span>`;
+      if (meta.risk > 0) b.classList.add('risky');
+      b.innerHTML = `<img alt="" src="${meta.img || ''}"><span></span>${meta.risk > 0 ? '<em>위험</em>' : ''}`;
       b.querySelector('span').textContent = n;
       b.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1161,10 +1190,33 @@
         spotsEl.appendChild(b);
       });
     };
-    render();
-    msg.textContent = '걸릴 만한 물건을 누른 뒤, 숨길 곳을 누르세요';
+    const risky = S.items.filter((n) => (prog.items[n] || {}).risk > 0);
     det.style.setProperty('--near', 0.45);
+    $('insInfo').textContent = '';
+    if (!risky.length) {
+      // nothing to hide: the search still happens
+      locked = true;
+      render();
+      msg.textContent = '가방에 걸릴 만한 물건은 없다. 형사가 가방을 뒤진다… · 화면을 눌러 계속';
+      box.hidden = false;
+      S.vars.검사적발 = 0;
+      S.flags.add('숨길것없음');
+      await new Promise((res) => { box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); }; });
+      box.hidden = true;
+      return;
+    }
+    render();
+    msg.textContent = '물건을 누른 뒤, 숨길 곳을 누르세요';
+    $('insBriefText').textContent = `형사가 윤재 자리까지 오는 데 ${secs}초. 가방 속에서 걸리면 안 되는 물건은 이것이에요.`;
+    const bi = $('insBriefItems');
+    bi.textContent = '';
+    risky.forEach((n) => bi.appendChild(itemBtn(n)));
+    $('insBrief').hidden = false;
     box.hidden = false;
+    await new Promise((res) => {
+      $('btnInsStart').onclick = (e) => { e.stopPropagation(); $('btnInsStart').onclick = null; res(); };
+    });
+    $('insBrief').hidden = true;
     const t0 = performance.now();
     await new Promise((res) => {
       const tick = setInterval(() => {
@@ -1194,67 +1246,230 @@
     box.hidden = true;
   }
 
-  /* ---------- chase mini-game: choose alleys before the detective catches up ---------- */
-  async function chaseGame(arg) {
+  /* ---------- chase mini-game: top-down alley map, the detective moves after every step ---------- */
+  // node positions are % of the 16:9 map_alley picture; links are walkable alleys
+  const ALLEY = [
+    { x: 2.5, y: 46.5, l: [1], tag: '입구' },
+    { x: 14, y: 46.5, l: [0, 2, 19] },
+    { x: 20, y: 35, l: [1, 3], hide: '장독대' },
+    { x: 29.3, y: 35, l: [2, 4, 5] },
+    { x: 33.8, y: 12, l: [3], dead: true },
+    { x: 29.3, y: 57.5, l: [3, 6, 20] },
+    { x: 36.8, y: 58, l: [5, 7], hide: '짚더미' },
+    { x: 43, y: 58, l: [6, 8, 14] },
+    { x: 43, y: 38.3, l: [7, 9] },
+    { x: 61, y: 38.3, l: [8, 10, 11] },
+    { x: 61, y: 50, l: [9, 15], hide: '우물' },
+    { x: 81, y: 38.8, l: [9, 12, 13] },
+    { x: 82.8, y: 12.8, l: [11], dead: true },
+    { x: 81, y: 59.5, l: [11, 17, 18] },
+    { x: 43, y: 69, l: [7, 15] },
+    { x: 60.4, y: 65.4, l: [14, 10, 17, 16] },
+    { x: 59.2, y: 91.4, l: [15], dead: true },
+    { x: 70.6, y: 62.7, l: [15, 13], hide: '장작더미' },
+    { x: 95, y: 58.5, l: [13], goal: true },
+    { x: 13.8, y: 66, l: [1, 20] },
+    { x: 28.7, y: 66, l: [19, 5, 21] },
+    { x: 28.7, y: 84, l: [20], dead: true },
+  ];
+  function alleyDist(from) {
+    const d = ALLEY.map(() => Infinity);
+    d[from] = 0;
+    const q = [from];
+    while (q.length) { const a = q.shift(); ALLEY[a].l.forEach((b) => { if (d[b] === Infinity) { d[b] = d[a] + 1; q.push(b); } }); }
+    return d;
+  }
+  async function chaseGame() {
     $('dialog').hidden = true;
     hideTip();
     const box = $('chase');
-    const det = $('chDet');
-    const opts = $('chOpts');
-    const hint = $('chHint');
+    const nodesEl = $('chNodes');
+    const tools = $('chTools');
     const msg = $('chMsg');
-    const bgEl = box.querySelector('.ch-bg');
-    const steps = Number(arg) || 5;
-    const limit = Math.min(5.5, 3.6 + 0.3 * Math.max(0, S.vars.체력 - 2));
-    const hintChance = S.vars.눈치 >= 2 ? Math.min(0.9, 0.25 + 0.15 * S.vars.눈치) : 0.1;
-    const DIRS = ['왼쪽 골목', '곧장', '오른쪽 골목'];
-    let gap = 3;
-    const nearOf = (g) => [1.05, 0.85, 0.65, 0.42][Math.max(0, Math.min(3, g))];
-    det.style.setProperty('--near', nearOf(gap));
+    const seeDead = S.vars.눈치 >= 2;
+    const lostTurns = S.vars.눈치 >= 3 ? 3 : 2;
+    let sprints = S.vars.체력 >= 6 ? 2 : S.vars.체력 >= 4 ? 1 : 0;
+    let me = 1;
+    let det = -1;          // not on the map yet: enters at the alley mouth after the first step
+    let lost = 0;
+    let turn = 0;
+    let sprinting = false;
+    const hidUsed = new Set();
+    const mk = (cls, n) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      d.style.left = ALLEY[n].x + '%';
+      d.style.top = ALLEY[n].y + '%';
+      return d;
+    };
+    const reach = () => {
+      if (!sprinting) return ALLEY[me].l.slice();
+      const set = new Set();
+      ALLEY[me].l.forEach((a) => { set.add(a); ALLEY[a].l.forEach((b) => { if (b !== me) set.add(b); }); });
+      return [...set];
+    };
+    let pickRes = null;
+    const render = () => {
+      nodesEl.textContent = '';
+      const can = new Set(reach());
+      ALLEY.forEach((nd, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ch-node' + (can.has(i) ? ' can' : '') + (nd.goal ? ' goal' : '') + (nd.hide ? ' hide' : '') + (nd.dead && seeDead ? ' dead' : '');
+        b.style.left = nd.x + '%';
+        b.style.top = nd.y + '%';
+        const label = nd.goal ? '집 대문' : nd.hide ? nd.hide : nd.dead && seeDead ? '막다른 길' : '';
+        if (label) { const s = document.createElement('span'); s.textContent = label; b.appendChild(s); }
+        b.addEventListener('click', (e) => { e.stopPropagation(); if (can.has(i) && pickRes) { const r = pickRes; pickRes = null; r({ go: i }); } });
+        nodesEl.appendChild(b);
+      });
+      const yt = mk('ch-token me', me);
+      yt.innerHTML = '<img alt="윤재" src="assets/char/char_yunjae_surprised.webp">';
+      nodesEl.appendChild(yt);
+      if (det >= 0) {
+        const dt = mk('ch-token det' + (lost ? ' lost' : ''), det);
+        dt.innerHTML = '<img alt="사토 형사" src="assets/char/char_detective_stern.webp">';
+        if (lost) { const q = document.createElement('i'); q.textContent = '?'; dt.appendChild(q); }
+        nodesEl.appendChild(dt);
+      }
+      const gap = det < 0 ? '아직 안 보임' : `${alleyDist(me)[det]}칸`;
+      $('chInfo').textContent = `형사와의 거리 ${gap}` + (lost ? ' · 형사가 길을 잃었다' : '');
+      tools.textContent = '';
+      if (ALLEY[me].hide && !hidUsed.has(me) && det >= 0) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn';
+        b.textContent = `${ALLEY[me].hide} 뒤에 숨기`;
+        b.addEventListener('click', (e) => { e.stopPropagation(); if (pickRes) { const r = pickRes; pickRes = null; r({ hide: true }); } });
+        tools.appendChild(b);
+      }
+      if (sprints > 0) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn' + (sprinting ? ' on' : '');
+        b.textContent = sprinting ? '전력 질주 중 (두 칸)' : `전력 질주 ×${sprints}`;
+        b.addEventListener('click', (e) => { e.stopPropagation(); sprinting = !sprinting; render(); });
+        tools.appendChild(b);
+      }
+    };
+    const caught = () => det >= 0 && det === me;
+    const detStep = () => {
+      if (det < 0) { if (turn >= 2) det = 0; return; }
+      if (lost > 0) {
+        lost -= 1;
+        const opts = ALLEY[det].l;
+        det = opts[Math.floor(Math.random() * opts.length)];
+        return;
+      }
+      const d = alleyDist(me);
+      det = ALLEY[det].l.reduce((best, n) => (d[n] < d[best] ? n : best), ALLEY[det].l[0]);
+    };
+    $('chBriefHide').hidden = false;
+    $('chBriefRun').hidden = sprints === 0;
+    $('chBrief').hidden = false;
     msg.textContent = '';
+    render();
     box.hidden = false;
-    for (let i = 0; i < steps && gap > 0; i++) {
-      $('chInfo').textContent = `갈림길 ${i + 1} / ${steps} · 거리 ${'●'.repeat(gap)}${'○'.repeat(3 - gap)}`;
-      const n = Math.random() < 0.5 ? 2 : 3;
-      const choices = n === 2 ? (Math.random() < 0.5 ? [DIRS[0], DIRS[2]] : [DIRS[0], DIRS[1]]) : DIRS.slice();
-      const dead = choices[Math.floor(Math.random() * choices.length)];
-      hint.textContent = Math.random() < hintChance ? `${dead} 끝에 담벼락이 보인다!` : '';
+    await new Promise((res) => { $('btnChStart').onclick = (e) => { e.stopPropagation(); $('btnChStart').onclick = null; res(); }; });
+    $('chBrief').hidden = true;
+    msg.textContent = '빛나는 동그라미를 눌러 움직이세요';
+    let result = null;
+    while (!result) {
+      render();
+      const act = await new Promise((res) => { pickRes = res; });
+      turn += 1;
+      if (act.hide) {
+        hidUsed.add(me);
+        lost = lostTurns;
+        msg.textContent = `${ALLEY[me].hide} 뒤에 숨었다. 형사가 두리번거린다…`;
+      } else {
+        if (sprinting) { sprints -= 1; sprinting = false; }
+        me = act.go;
+        msg.textContent = ALLEY[me].dead ? '막다른 길이다! 되돌아가야 한다' : '';
+      }
+      if (ALLEY[me].goal) { result = 'escape'; break; }
+      if (caught()) { result = 'caught'; break; }
+      render();
+      await sleep(260);
+      detStep();
+      if (caught()) { result = 'caught'; break; }
+      if (turn % 4 === 0 && lost === 0 && det >= 0) {
+        render();
+        await sleep(220);
+        detStep();
+        if (!msg.textContent) msg.textContent = '형사가 뛰기 시작했다!';
+        if (caught()) { result = 'caught'; break; }
+      }
+      box.classList.toggle('danger', det >= 0 && alleyDist(me)[det] <= 1);
+    }
+    render();
+    box.classList.remove('danger');
+    tools.textContent = '';
+    S.vars.추격성공 = result === 'escape' ? 1 : 0;
+    msg.textContent = (result === 'escape' ? '집 대문 안으로 뛰어들었다!' : '어깨를 붙잡혔다…') + ' · 화면을 눌러 계속';
+    if (result === 'caught') { $('stage').classList.add('shake'); setTimeout(() => $('stage').classList.remove('shake'), 450); }
+    await new Promise((res) => { box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); }; });
+    box.hidden = true;
+  }
+
+  /* ---------- interrogation mini-game: whatever you answer, the pressure only grows ---------- */
+  async function interrogate(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const box = $('interro');
+    const qEl = $('itQ');
+    const opts = $('itOpts');
+    const bar = $('itTime');
+    const det = $('itDet');
+    let will = 100;
+    const drop = Math.max(10, 24 - 3 * S.vars.용기);
+    const showWill = () => { $('itInfo').textContent = `버티는 힘 ${'■'.repeat(Math.ceil(will / 20))}${'□'.repeat(5 - Math.ceil(will / 20))}`; };
+    const slam = async () => {
+      const f = $('itFlash');
+      f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+      $('stage').classList.add('shake');
+      box.classList.add('shake');
+      await sleep(450);
+      $('stage').classList.remove('shake');
+      box.classList.remove('shake');
+    };
+    const typeQ = (text) => typeRich(qEl, interp(text), 30);
+    box.hidden = false;
+    showWill();
+    det.style.setProperty('--near', 0.8);
+    for (let i = 0; i < c.qs.length; i++) {
+      const q = c.qs[i];
       opts.textContent = '';
-      const pick = await new Promise((res) => {
+      bar.style.width = '100%';
+      det.style.setProperty('--near', (0.8 + 0.08 * i).toFixed(2));
+      await typeQ(q.text);
+      const secs = 6;
+      const answer = await new Promise((res) => {
         const t0 = performance.now();
-        const bar = $('chTime');
         const tick = setInterval(() => {
-          const left = Math.max(0, limit * 1000 - (performance.now() - t0));
-          bar.style.width = (100 * left) / (limit * 1000) + '%';
+          const left = Math.max(0, secs * 1000 - (performance.now() - t0));
+          bar.style.width = (100 * left) / (secs * 1000) + '%';
           if (left <= 0) { clearInterval(tick); res(null); }
         }, 50);
-        choices.forEach((c) => {
+        q.answers.forEach((a) => {
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'btn';
-          b.textContent = c;
-          b.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(c); });
+          b.textContent = a;
+          b.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(a); });
           opts.appendChild(b);
         });
       });
       opts.textContent = '';
-      hint.textContent = '';
-      if (!pick || pick === dead) {
-        gap -= 1;
-        msg.textContent = pick ? '막다른 길이다! 형사가 가까워진다' : '머뭇거리는 사이 형사가 가까워진다';
-        $('stage').classList.add('shake');
-        setTimeout(() => $('stage').classList.remove('shake'), 450);
-      } else {
-        msg.textContent = '골목을 빠져나왔다';
-      }
-      bgEl.classList.remove('run'); void bgEl.offsetWidth; bgEl.classList.add('run');
-      det.style.setProperty('--near', nearOf(gap));
-      await sleep(900);
+      will = Math.max(5, will - drop - (answer ? 0 : 6));
+      showWill();
+      await slam();
+      await typeQ(answer ? q.reply : '(침묵) … 말 못 하겠나? ' + q.reply);
+      await sleep(250);
+      await waitTap();
     }
-    S.vars.추격성공 = gap > 0 ? 1 : 0;
-    $('chInfo').textContent = '';
-    msg.textContent = (gap > 0 ? '형사를 따돌렸다!' : '형사에게 붙잡혔다…') + ' · 화면을 눌러 계속';
-    await new Promise((res) => { box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); }; });
+    S.vars.심문버팀 = will;
     box.hidden = true;
   }
 
@@ -1386,7 +1601,7 @@
       case 'say': {
         if (c.face) setSprite(c.who, c.face);
         highlight(sprites.has(c.who) ? c.who : null);
-        return speak('say', c.who === '진수' ? '진수 형' : c.who, c.text);
+        return speak('say', NAME_LABEL[c.who] || c.who, c.text);
       }
       case 'think': highlight(sprites.has('윤재') ? '윤재' : null); return speak('think', '윤재 속마음', c.text);
       case 'narr': highlight(null); return speak('narr', '', c.text);
@@ -1442,6 +1657,7 @@
       case 'chapterend': return chapterEnd(c.arg);
       case 'inspect': return inspectGame(c.arg);
       case 'chase': return chaseGame(c.arg);
+      case 'interrogate': return interrogate(c);
       case 'waver': return waver(c.arg);
       case 'get': {
         const name = c.arg.trim();
@@ -1513,7 +1729,7 @@
   }
 
   const OVERLAYS = ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard',
-    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro'];
+    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro', 'interro'];
 
   function start(fromSave, label) {
     runId += 1;

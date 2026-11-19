@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./cg_father.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+A hazy memory flashback illustration: soft blurred edges fading into warm sepia, slightly washed-out like an old photograph, dreamy light. No text. Scene: at dawn, a thin middle-aged Korean tenant farmer in worn white work clothes and a straw hat, deeply bent over in a flooded rice paddy, planting rice seedlings by hand, his back aching, mist over the fields, mountains behind. Seen from the side and slightly behind, his face not clearly visible.
