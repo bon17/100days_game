@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>1929 광주 D-100</title>
+<meta name="theme-color" content="#140e0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Song+Myung&display=swap">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="game" class="game">
+
+  <div class="stage" id="stage">
+    <img class="bg" id="bg" alt="">
+    <div class="sprites" id="sprites"></div>
+  </div>
+
+  <header class="topbar" id="topbar">
+    <div class="dday">
+      <span class="dday-label" id="ddayLabel">장학생 수여식까지</span>
+      <span class="dday-num" id="ddayNum">D-100</span>
+    </div>
+    <div class="minicards" id="minicards"></div>
+    <div class="gauges">
+      <div class="gauge" id="gGrade"><span class="g-label">장학생</span><span class="g-track"><span class="g-fill"></span></span></div>
+      <div class="gauge warn" id="gSusp"><span class="g-label">의심</span><span class="g-track"><span class="g-fill"></span></span></div>
+    </div>
+  </header>
+
+  <aside class="beliefs" id="beliefs">
+    <div class="beliefs-title">윤재의 믿음</div>
+    <div class="belief-list" id="beliefList"></div>
+  </aside>
+
+  <section class="dialog" id="dialog" hidden>
+    <div class="nametag" id="nametag"></div>
+    <p class="line" id="line"></p>
+    <span class="next" aria-hidden="true">▼</span>
+  </section>
+
+  <div class="choices" id="choices" hidden></div>
+  <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>
+  <div class="toast" id="toast" hidden></div>
+
+  <div class="overlay daycard" id="daycard" hidden>
+    <div class="dc-num" id="dcNum"></div>
+    <div class="dc-date" id="dcDate"></div>
+    <div class="dc-place" id="dcPlace"></div>
+  </div>
+
+  <div class="overlay notebook" id="notebook" hidden>
+    <div class="nb-wrap">
+      <img src="assets/ui/ui_notebook.webp" alt="">
+      <p class="nb-text" id="nbText"></p>
+    </div>
+  </div>
+
+  <div class="overlay cardsintro" id="cardsintro" hidden>
+    <h2>윤재가 믿는 것들</h2>
+    <div class="ci-row" id="ciRow"></div>
+    <p class="ci-foot">100일 동안, 이 믿음들은 어떻게 될까요?</p>
+    <p class="tap-hint">화면을 눌러 계속</p>
+  </div>
+
+  <div class="overlay cardshow" id="cardshow" hidden>
+    <div class="cs-card"><img id="csImg" alt=""></div>
+    <div class="cs-text">
+      <p class="cs-label" id="csLabel"></p>
+      <p class="cs-truth" id="csTruth"></p>
+      <p class="cs-common" id="csCommon"></p>
+    </div>
+    <p class="tap-hint">화면을 눌러 계속</p>
+  </div>
+
+  <div class="overlay exam" id="exam" hidden>
+    <div class="ex-head">
+      <span class="ex-part" id="exPart"></span>
+      <span class="ex-prog" id="exProg"></span>
+    </div>
+    <button class="stamp-btn" id="btnO" type="button" aria-label="O 도장"><img src="assets/minigame/mg_stamp_o.webp" alt=""></button>
+    <div class="ex-paper">
+      <img class="ex-paper-img" src="assets/minigame/mg_exam_paper.webp" alt="">
+      <p class="ex-q" id="exQ"></p>
+      <img class="ex-stamp" id="exStamp" alt="" hidden>
+      <p class="ex-feedback" id="exFeedback"></p>
+    </div>
+    <button class="stamp-btn" id="btnX" type="button" aria-label="X 도장"><img src="assets/minigame/mg_stamp_x.webp" alt=""></button>
+    <div class="ex-timer" id="exTimer"><img src="assets/minigame/mg_timer.webp" alt=""><span id="exSec"></span></div>
+  </div>
+
+  <div class="overlay result" id="result" hidden>
+    <div class="rs-paper">
+      <h2 id="rsTitle"></h2>
+      <p class="rs-sub" id="rsSub"></p>
+      <table class="rs-table" id="rsTable"></table>
+      <p class="rs-note" id="rsNote"></p>
+    </div>
+    <p class="tap-hint">화면을 눌러 계속</p>
+  </div>
+
+  <div class="overlay endscreen" id="endscreen" hidden>
+    <div class="es-left">
+      <img id="esCard" alt="">
+    </div>
+    <div class="es-right">
+      <p class="es-kicker">1화 끝</p>
+      <h2 class="es-title">공부만 잘하면 돼</h2>
+      <ul class="es-stats" id="esStats"></ul>
+      <div class="es-ask">
+        <b>생각해 볼 질문</b>
+        <span>장학생은 어떤 기준으로 뽑혔나요? 윤재가 바꿀 수 있는 기준이었나요?</span>
+      </div>
+      <div class="es-next">
+        <b>다음 화 · D-60</b>
+        <span>갑자기 소지품 검사가 시작된다. 윤재의 두 번째 믿음, ‘가만히 있으면 안전해’.</span>
+      </div>
+      <button class="btn" id="btnRestart" type="button">처음부터 다시</button>
+    </div>
+  </div>
+
+  <div class="overlay title" id="title" hidden>
+    <img class="title-bg" src="assets/bg/bg_title.webp" alt="">
+    <div class="title-logo">
+      <p class="title-kicker">1929, 광주의 열다섯</p>
+      <h1 class="title-name">D-100</h1>
+      <p class="title-sub">장학생 수여식까지 100일</p>
+    </div>
+    <div class="title-actions">
+      <button class="btn btn-big" id="btnStart" type="button">시작하기</button>
+      <button class="btn-plain" id="btnFull" type="button">전체 화면으로</button>
+    </div>
+    <p class="title-ep">1화 · 공부만 잘하면 돼 (프로토타입)</p>
+  </div>
+
+  <div class="overlay loading" id="loading">
+    <p class="ld-name">D-100</p>
+    <p class="ld-bar"><span id="ldFill"></span></p>
+    <p class="ld-text" id="ldText">그림을 불러오는 중</p>
+  </div>
+
+  <div class="overlay beliefview" id="beliefview" hidden>
+    <img id="bvImg" alt="">
+    <p class="bv-label" id="bvLabel"></p>
+    <p class="bv-truth" id="bvTruth"></p>
+    <p class="tap-hint">눌러서 닫기</p>
+  </div>
+
+  <div class="rotate" id="rotate">
+    <img src="assets/ui/ui_rotate.webp" alt="">
+    <p>화면을 가로로 돌려 주세요</p>
+  </div>
+
+</div>
+<script src="story/stage1.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>
