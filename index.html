@@ -26,6 +26,7 @@
       <span class="dday-num" id="ddayNum">D-100</span>
     </div>
     <div class="minicards" id="minicards"></div>
+    <button class="beliefs-btn" id="btnBeliefs" type="button"><img id="bbImg" src="assets/card/card_study.webp" alt=""><span>윤재의 믿음</span><b id="bbCount"></b></button>
     <button class="notes-btn" id="btnNotes" type="button"><img src="assets/ui/ui_notebook.webp" alt=""><span>역사 노트</span></button>
     <div class="gauges">
       <div class="gauge" id="gGrade"><span class="g-label">장학생</span><span class="g-track"><span class="g-fill"></span></span></div>
@@ -43,6 +44,15 @@
     <p class="line" id="line"></p>
     <span class="next" aria-hidden="true">▼</span>
   </section>
+
+  <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
+
+  <div class="overlay beliefsall" id="beliefsall" hidden>
+    <h2>윤재의 믿음</h2>
+    <div class="ci-row" id="baRow"></div>
+    <p class="ci-foot">카드를 누르면 크게 볼 수 있어요</p>
+    <button class="btn notes-close" id="btnBeliefsClose" type="button">닫기</button>
+  </div>
 
   <div class="choices" id="choices" hidden></div>
   <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>

@@ -286,7 +286,18 @@
     if (el) { el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
   }
 
+  let lastCardId = 'study';
   function renderBeliefs(flashId) {
+    if (flashId && flashId !== 'all') lastCardId = flashId;
+    $('bbImg').src = cardSrc(lastCardId, S.cards[lastCardId]);
+    const broken = CARDS.filter((c) => S.cards[c.id] === 'broken').length;
+    $('bbCount').textContent = broken ? `${broken}/${CARDS.length} 깨짐` : '';
+    if (flashId) {
+      const b = $('btnBeliefs');
+      b.classList.remove('flash');
+      void b.offsetWidth;
+      b.classList.add('flash');
+    }
     const list = $('beliefList');
     const mini = $('minicards');
     list.textContent = '';
@@ -306,6 +317,25 @@
       mb.addEventListener('click', (e) => { e.stopPropagation(); openBelief(c); });
       mini.appendChild(mb);
     });
+  }
+
+  function openBeliefsAll() {
+    const row = $('baRow');
+    row.textContent = '';
+    CARDS.forEach((c) => {
+      const st = S.cards[c.id];
+      const d = document.createElement('div');
+      d.className = 'ci-item ' + st;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = `<img alt="" src="${cardSrc(c.id, st)}">`;
+      b.addEventListener('click', (e) => { e.stopPropagation(); openBelief(c); });
+      const s = document.createElement('span');
+      s.textContent = c.label;
+      d.append(b, s);
+      row.appendChild(d);
+    });
+    $('beliefsall').hidden = false;
   }
 
   function openBelief(c) {
@@ -536,8 +566,7 @@
     $('cardsintro').hidden = true;
     hud(['믿음']);
     renderBeliefs('all');
-    const where = window.matchMedia('(max-height: 520px)').matches ? '위쪽' : '왼쪽';
-    toast(`윤재의 믿음은 ${where} 카드를 눌러 언제든 다시 볼 수 있어요`);
+    toast('위쪽 ‘윤재의 믿음’을 누르면 언제든 다시 볼 수 있어요');
     await sleep(400);
   }
 
@@ -734,15 +763,23 @@
     showNote(S.notes.length - 1);
   }
 
+  let pingTimer = null;
   async function waver(arg) {
     const card = CARDS.find((c) => c.name === arg.trim() || c.id === arg.trim());
     if (!card) return;
-    renderBeliefs();
-    document.querySelectorAll('.belief, .minicards img').forEach((el, i) => {
-      if (i % CARDS.length === CARDS.indexOf(card)) el.classList.add('waver');
-    });
-    toast('윤재의 믿음이 흔들린다');
-    await sleep(700);
+    const ping = $('cardping');
+    clearTimeout(pingTimer);
+    $('cpImg').src = cardSrc(card.id, S.cards[card.id]);
+    $('cpText').textContent = `‘${card.label}’ 믿음이 흔들린다`;
+    ping.classList.remove('out');
+    ping.hidden = false;
+    ping.style.animation = 'none'; void ping.offsetWidth; ping.style.animation = '';
+    renderBeliefs(card.id);
+    pingTimer = setTimeout(() => {
+      ping.classList.add('out');
+      pingTimer = setTimeout(() => { ping.hidden = true; ping.classList.remove('out'); }, 350);
+    }, 2400);
+    await sleep(900);
   }
 
   async function setBg(name) {
@@ -848,7 +885,7 @@
     hideSprite('모두');
     $('bg').removeAttribute('src');
     $('slBg').removeAttribute('src');
-    ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard', 'tip', 'slide', 'btnSkip', 'noteshow', 'notes'].forEach((k) => { $(k).hidden = true; });
+    ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard', 'tip', 'slide', 'btnSkip', 'noteshow', 'notes', 'beliefsall', 'cardping'].forEach((k) => { $(k).hidden = true; });
     $('ddayNum').textContent = 'D-100';
     renderGauges();
     renderBeliefs();
@@ -883,6 +920,12 @@
     e.stopPropagation();
     $('title').hidden = true;
     start();
+  });
+  $('btnBeliefs').addEventListener('click', (e) => { e.stopPropagation(); openBeliefsAll(); });
+  $('btnBeliefsClose').addEventListener('click', (e) => { e.stopPropagation(); $('beliefsall').hidden = true; });
+  $('beliefsall').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (e.target.id === 'beliefsall') $('beliefsall').hidden = true;
   });
   $('btnNotes').addEventListener('click', (e) => { e.stopPropagation(); openNotes(); });
   $('btnNotesClose').addEventListener('click', (e) => { e.stopPropagation(); $('notes').hidden = true; });
