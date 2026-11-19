@@ -13,22 +13,27 @@
     강당: 'assets/bg/bg_auditorium.webp',
     교실: 'assets/bg/bg_classroom.webp',
     집: 'assets/bg/bg_home.webp',
+    거리: 'assets/bg/bg_street.webp',
+    기차: 'assets/bg/bg_train.webp',
   };
+  const HUD = { 디데이: 'hud-dday', 장학생: 'hud-grade', 의심: 'hud-susp', 믿음: 'hud-beliefs', 노트: 'hud-notes' };
   const CHARS = {
     윤재: { key: 'yunjae', scale: 1, faces: { 기본: 'normal', 웃음: 'smile', 놀람: 'surprised', 화남: 'angry', 슬픔: 'sad' } },
     만식: { key: 'mansik', scale: 0.84, faces: { 기본: 'normal', 웃음: 'smile', 걱정: 'worried' } },
     교장: { key: 'principal', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
     교관: { key: 'instructor', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
+    진수: { key: 'senior', scale: 1.02, faces: { 기본: 'normal', 씁쓸: 'bitter' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
   const CARDS = [
-    { id: 'study', name: '공부', label: '공부만 잘하면 돼', truth: '실력만으로 오르는 사다리가 아니었다.', states: ['normal', 'cracked', 'broken'] },
+    { id: 'study', name: '공부', label: '공부만 잘하면 돼', truth: '실력만으로 오르는 사다리가 아니었다.', states: ['normal', 'hairline', 'cracked', 'broken'] },
     { id: 'safe', name: '안전', label: '가만히 있으면 안전해', states: ['normal'] },
     { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', states: ['normal'] },
     { id: 'escape', name: '탈출', label: '나 하나만 빠져나가면 돼', states: ['normal'] },
-    { id: 'hopeless', name: '체념', label: '어차피 안 바뀌어', states: ['normal'] },
+    { id: 'hopeless', name: '원래', label: '태어나 보니 원래 이랬어', truth: '원래 그런 세상은 없었다. 누군가 빼앗은 것이다.', states: ['normal'] },
   ];
-  const CARD_STATE = { 기본: 'normal', 금감: 'cracked', 깨짐: 'broken' };
+  const CARD_STATE = { 기본: 'normal', 실금: 'hairline', 금감: 'cracked', 깨짐: 'broken' };
+  const CARD_STATE_TEXT = { hairline: '윤재의 믿음에 처음으로 실금이 갔다.', cracked: '윤재의 믿음에 금이 크게 갔다.' };
   const COMMON_TRUTH = '내가 틀린 게 아니었다. 세상이 그렇게 놔두지 않았다.';
   const cardSrc = (id, st) => `assets/card/card_${id}${st === 'normal' ? '' : '_' + st}.webp`;
   const charSrc = (key, face) => `assets/char/char_${key}_${face}.webp`;
@@ -54,6 +59,7 @@
   function parse(src) {
     const cmds = [];
     const labels = {};
+    const terms = {};
     const lines = src.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const t = lines[i].trim();
@@ -64,6 +70,11 @@
       if (t.startsWith('@')) {
         const name = t.slice(1).split(/\s+/)[0];
         const arg = t.slice(1 + name.length).trim();
+        if (name === 'term') {
+          const bar = arg.indexOf('|');
+          if (bar > 0) terms[arg.slice(0, bar).trim()] = arg.slice(bar + 1).trim();
+          continue;
+        }
         if (name === 'exam') {
           const [key, title, secs] = arg.split('|').map((x) => x.trim());
           const qs = [];
@@ -97,7 +108,124 @@
       if (m) { cmds.push({ type: 'say', who: m[1].trim(), face: m[2] || null, text: m[3] }); continue; }
       cmds.push({ type: 'narr', text: t });
     }
-    return { cmds, labels };
+    return { cmds, labels, terms };
+  }
+
+  /* ---------- glossary: underlined terms with pop-up explanations ---------- */
+  let termRe = null;
+  function buildTermRe() {
+    const names = Object.keys(prog.terms)
+      .sort((a, b) => b.length - a.length)
+      .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    termRe = names.length ? new RegExp(names.join('|'), 'g') : null;
+  }
+  function splitTerms(text) {
+    if (!termRe) return [{ t: text }];
+    const out = [];
+    let last = 0;
+    text.replace(termRe, (m, off) => {
+      if (off > last) out.push({ t: text.slice(last, off) });
+      out.push({ t: m, term: m });
+      last = off + m.length;
+      return m;
+    });
+    if (last < text.length) out.push({ t: text.slice(last) });
+    return out;
+  }
+
+  const pops = [];
+  function placePop(p) {
+    const r = p.span.getBoundingClientRect();
+    const g = $('game').getBoundingClientRect();
+    const el = p.el;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    let left = r.left + r.width / 2 - w / 2;
+    left = Math.max(8, Math.min(g.width - w - 8, left));
+    let top = r.top - h - 12;
+    for (const q of pops) {
+      if (q === p) break;
+      const qr = q.el.getBoundingClientRect();
+      if (left < qr.right && left + w > qr.left && top < qr.bottom && top + h > qr.top) top = qr.top - h - 8;
+    }
+    const below = top < 6;
+    if (below) top = r.bottom + 12;
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.classList.toggle('below', below);
+    el.style.setProperty('--arrow-x', Math.max(14, Math.min(w - 14, r.left + r.width / 2 - left)) + 'px');
+  }
+  function showPop(span, term, keepOthers) {
+    if (!keepOthers) hidePops();
+    const el = document.createElement('div');
+    el.className = 'termpop';
+    const b = document.createElement('b');
+    b.textContent = term;
+    const s = document.createElement('span');
+    s.textContent = prog.terms[term] || '';
+    el.append(b, s);
+    $('game').appendChild(el);
+    const p = { el, span };
+    pops.push(p);
+    placePop(p);
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = pops.indexOf(p);
+      if (i >= 0) pops.splice(i, 1);
+      el.remove();
+    });
+  }
+  function hidePops() { while (pops.length) pops.pop().el.remove(); }
+  function repositionPops() { pops.forEach(placePop); }
+  window.addEventListener('resize', repositionPops);
+
+  // Typewriter that keeps glossary terms as tappable spans.
+  // The first time a term appears in a playthrough, its explanation pops up above it.
+  function typeRich(el, full, speed) {
+    const nodes = splitTerms(full).map((sg) => {
+      let node;
+      if (sg.term) {
+        node = document.createElement('span');
+        node.className = 'term';
+        node.dataset.term = sg.term;
+      } else {
+        node = document.createTextNode('');
+      }
+      return { node, text: sg.t, term: sg.term, done: false };
+    });
+    el.textContent = '';
+    nodes.forEach((n) => el.appendChild(n.node));
+    const termDone = (n) => {
+      if (n.done || !n.term) return;
+      n.done = true;
+      if (!S.seenTerms.has(n.term)) {
+        S.seenTerms.add(n.term);
+        showPop(n.node, n.term, true);
+      }
+    };
+    return new Promise((res) => {
+      let si = 0;
+      let ci = 0;
+      let timer = null;
+      const finish = () => {
+        clearTimeout(timer);
+        nodes.forEach((n) => { n.node.textContent = n.text; termDone(n); });
+        if (tapResolver === finish) tapResolver = null;
+        repositionPops();
+        res();
+      };
+      tapResolver = finish;
+      const step = () => {
+        if (si >= nodes.length) { finish(); return; }
+        const n = nodes[si];
+        ci += 1;
+        n.node.textContent = n.text.slice(0, ci);
+        if (ci >= n.text.length) { termDone(n); si += 1; ci = 0; }
+        if (si >= nodes.length) finish();
+        else timer = setTimeout(step, speed);
+      };
+      step();
+    });
   }
 
   /* ---------- state ---------- */
@@ -113,6 +241,8 @@
       vars: { 성적: 70, 의심: 0, 우정: 0, 학과: 0, 수신: 0 },
       flags: new Set(),
       cards: Object.fromEntries(CARDS.map((c) => [c.id, 'normal'])),
+      seenTerms: new Set(),
+      notes: [],
       day: 100,
     };
   }
@@ -124,6 +254,8 @@
   $('game').addEventListener('click', (e) => {
     if (e.target.closest('button')) return;
     if (!$('beliefview').hidden) return;
+    const termEl = e.target.closest('.term');
+    if (termEl) { showPop(termEl, termEl.dataset.term); return; }
     fireTap();
   });
   document.addEventListener('keydown', (e) => {
@@ -135,6 +267,16 @@
   });
 
   /* ---------- HUD ---------- */
+  function hud(names, on = true) {
+    const g = $('game');
+    names.forEach((n) => { if (HUD[n]) g.classList.toggle(HUD[n], on); });
+    g.classList.toggle('hud-any', Object.values(HUD).some((c) => g.classList.contains(c)));
+  }
+  function resetHud() {
+    const g = $('game');
+    [...Object.values(HUD), 'hud-any'].forEach((c) => g.classList.remove(c));
+  }
+
   function renderGauges(pulseVar) {
     const g = Math.max(0, Math.min(100, S.vars.성적));
     const s = Math.max(0, Math.min(100, S.vars.의심));
@@ -153,7 +295,7 @@
       const st = S.cards[c.id];
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'belief ' + st + (flashId === c.id ? ' flash' : '');
+      b.className = 'belief ' + st + (flashId === c.id || flashId === 'all' ? ' flash' : '');
       b.innerHTML = `<img alt="" src="${cardSrc(c.id, st)}"><span>${c.label}</span>`;
       b.addEventListener('click', () => openBelief(c));
       list.appendChild(b);
@@ -170,7 +312,7 @@
     const st = S.cards[c.id];
     $('bvImg').src = cardSrc(c.id, st);
     $('bvLabel').textContent = c.label;
-    $('bvTruth').textContent = st === 'broken' ? c.truth : st === 'cracked' ? '금이 가기 시작했다.' : '';
+    $('bvTruth').textContent = st === 'broken' ? c.truth : st === 'cracked' ? '금이 크게 갔다.' : st === 'hairline' ? '아주 가늘게, 실금이 갔다.' : '';
     $('beliefview').hidden = false;
   }
   $('beliefview').addEventListener('click', (e) => { e.stopPropagation(); $('beliefview').hidden = true; });
@@ -196,6 +338,7 @@
       if (ef.flag) { S.flags.add(ef.flag); return; }
       S.vars[ef.v] = (S.vars[ef.v] || 0) + ef.d;
       if (ef.v === '성적' || ef.v === '의심') {
+        hud([ef.v === '성적' ? '장학생' : '의심']);
         renderGauges(ef.v);
         if (!quiet) toast(`${VAR_NAME[ef.v]} ${ef.d > 0 ? '+' : '−'}${Math.abs(ef.d)}`);
       } else if (ef.v === '우정' && !quiet) {
@@ -265,25 +408,13 @@
     dialog.className = 'dialog ' + kind;
     $('nametag').textContent = name || '';
     $('nametag').hidden = !name;
-    const full = interp(text);
-    line.textContent = '';
-    await new Promise((res) => {
-      let i = 0;
-      let timer = null;
-      const finish = () => { clearTimeout(timer); line.textContent = full; tapResolver = null; res(); };
-      tapResolver = finish;
-      const step = () => {
-        i += 1;
-        line.textContent = full.slice(0, i);
-        if (i >= full.length) finish();
-        else timer = setTimeout(step, 26);
-      };
-      step();
-    });
+    hidePops();
+    await typeRich(line, interp(text), 26);
     dialog.classList.add('ready');
     await waitTap();
     dialog.classList.remove('ready');
     hideTip();
+    hidePops();
   }
 
   function choose(options) {
@@ -311,11 +442,53 @@
   }
 
   /* ---------- overlays ---------- */
+  let skipTarget = null;
+  let skipReq = false;
+  async function slide(arg) {
+    const bar = arg.indexOf('|');
+    const left = (bar < 0 ? '' : arg.slice(0, bar)).trim();
+    const text = (bar < 0 ? arg : arg.slice(bar + 1)).trim();
+    const [bgName, who] = left.split(/\s+/);
+    const box = $('slide');
+    const bg = $('slBg');
+    const ch = $('slChar');
+    $('dialog').hidden = true;
+    hideTip();
+    box.hidden = false;
+    const src = BG[bgName];
+    if (src && bg.getAttribute('src') !== src) {
+      bg.style.opacity = 0;
+      await sleep(300);
+      bg.src = src;
+      bg.style.opacity = 1;
+    }
+    if (skipReq) return;
+    if (who && CHARS[who]) {
+      const next = charSrc(CHARS[who].key, 'normal');
+      if (ch.hidden || ch.getAttribute('src') !== next) { ch.src = next; ch.hidden = false; }
+      box.classList.add('with-char');
+    } else {
+      ch.hidden = true;
+      box.classList.remove('with-char');
+    }
+    hidePops();
+    const voice = text.startsWith('(속)');
+    $('slText').classList.toggle('voice', voice);
+    await typeRich($('slText'), interp(voice ? text.slice(3).trim() : text), voice ? 55 : 45);
+    if (skipReq) { hidePops(); return; }
+    await waitTap();
+    hidePops();
+  }
+
   async function dayCard(arg) {
     const [n, date, place] = arg.split('|').map((x) => x.trim());
-    S.day = Number(n);
-    $('ddayNum').textContent = 'D-' + n;
-    $('dcNum').textContent = 'D-' + n;
+    const showNum = n && n !== '-';
+    if (showNum) {
+      S.day = Number(n);
+      $('ddayNum').textContent = 'D-' + n;
+      $('dcNum').textContent = 'D-' + n;
+    }
+    $('dcNum').hidden = !showNum;
     $('dcDate').textContent = date || '';
     $('dcPlace').textContent = place || '';
     $('dialog').hidden = true;
@@ -361,6 +534,11 @@
     await sleep(600);
     await waitTap();
     $('cardsintro').hidden = true;
+    hud(['믿음']);
+    renderBeliefs('all');
+    const where = window.matchMedia('(max-height: 520px)').matches ? '위쪽' : '왼쪽';
+    toast(`윤재의 믿음은 ${where} 카드를 눌러 언제든 다시 볼 수 있어요`);
+    await sleep(400);
   }
 
   async function cardEvent(arg) {
@@ -390,8 +568,8 @@
     img.src = cardSrc(card.id, st);
     S.cards[card.id] = st;
     renderBeliefs(card.id);
-    if (st === 'cracked') {
-      truth.textContent = '윤재의 믿음에 금이 갔다.';
+    if (CARD_STATE_TEXT[st]) {
+      truth.textContent = CARD_STATE_TEXT[st];
       truth.className = 'cs-truth reveal';
     } else if (st === 'broken') {
       label.className = 'cs-label broken';
@@ -509,6 +687,64 @@
     $('endscreen').hidden = false;
   }
 
+  /* ---------- history notes ("알고 가기") ---------- */
+  async function noteEvent(arg) {
+    const [title, bgKey, ...rest] = arg.split('|').map((x) => x.trim());
+    const text = rest.join(' | ');
+    const img = BG[bgKey] || '';
+    if (S.notes.some((n) => n.title === title)) return;
+    S.notes.push({ title, img, text });
+    $('dialog').hidden = true;
+    hideTip();
+    hidePops();
+    $('nsImg').src = img;
+    $('nsImg').hidden = !img;
+    $('nsTitle').textContent = title;
+    $('nsText').textContent = text;
+    $('noteshow').hidden = false;
+    hud(['노트']);
+    await sleep(500);
+    await waitTap();
+    $('noteshow').hidden = true;
+    const b = $('btnNotes');
+    b.classList.remove('flash');
+    void b.offsetWidth;
+    b.classList.add('flash');
+  }
+  function showNote(i) {
+    const n = S.notes[i];
+    if (!n) return;
+    $('nlImg').src = n.img;
+    $('nlImg').hidden = !n.img;
+    $('nlTitle').textContent = n.title;
+    $('nlText').textContent = n.text;
+    [...$('notesList').children].forEach((b, j) => b.classList.toggle('on', j === i));
+  }
+  function openNotes() {
+    const list = $('notesList');
+    list.textContent = '';
+    S.notes.forEach((n, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = n.title;
+      b.addEventListener('click', (e) => { e.stopPropagation(); showNote(i); });
+      list.appendChild(b);
+    });
+    $('notes').hidden = false;
+    showNote(S.notes.length - 1);
+  }
+
+  async function waver(arg) {
+    const card = CARDS.find((c) => c.name === arg.trim() || c.id === arg.trim());
+    if (!card) return;
+    renderBeliefs();
+    document.querySelectorAll('.belief, .minicards img').forEach((el, i) => {
+      if (i % CARDS.length === CARDS.indexOf(card)) el.classList.add('waver');
+    });
+    toast('윤재의 믿음이 흔들린다');
+    await sleep(700);
+  }
+
   async function setBg(name) {
     const src = BG[name];
     if (!src) return;
@@ -552,12 +788,24 @@
         return sleep(300);
       }
       case 'flag': S.flags.add(c.arg.trim()); return;
-      case 'tip': {
+      case 'tip':
+      case 'guide': {
         const [term, text] = c.arg.split('|').map((x) => x.trim());
         $('tipTerm').textContent = term;
         $('tipText').textContent = text || '';
+        $('tip').dataset.kind = c.type;
         $('tip').hidden = false;
         tipShown = true;
+        return;
+      }
+      case 'hud': hud(c.arg.split(/\s+/)); renderGauges(); return sleep(300);
+      case 'note': return noteEvent(c.arg);
+      case 'waver': return waver(c.arg);
+      case 'slide': return slide(c.arg);
+      case 'skippable': {
+        const target = c.arg.trim();
+        skipTarget = target && target !== '끝' ? target : null;
+        $('btnSkip').hidden = !skipTarget;
         return;
       }
       case 'notebook': return notebook(c.arg);
@@ -580,6 +828,10 @@
   async function run(id) {
     while (id === runId && pc < prog.cmds.length) {
       const c = prog.cmds[pc++];
+      if (c.type !== 'slide') {
+        skipReq = false;
+        if (!$('slide').hidden) $('slide').hidden = true;
+      }
       try { await exec(c); } catch (err) { console.error(err); }
     }
   }
@@ -589,9 +841,14 @@
     S = newState();
     pc = 0;
     tapResolver = null;
+    skipTarget = null;
+    skipReq = false;
+    hidePops();
+    resetHud();
     hideSprite('모두');
     $('bg').removeAttribute('src');
-    ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard', 'tip'].forEach((k) => { $(k).hidden = true; });
+    $('slBg').removeAttribute('src');
+    ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard', 'tip', 'slide', 'btnSkip', 'noteshow', 'notes'].forEach((k) => { $(k).hidden = true; });
     $('ddayNum').textContent = 'D-100';
     renderGauges();
     renderBeliefs();
@@ -610,6 +867,7 @@
 
   async function boot() {
     prog = parse(window.STORY_STAGE1 || '');
+    buildTermRe();
     S = newState();
     renderGauges();
     renderBeliefs();
@@ -625,6 +883,21 @@
     e.stopPropagation();
     $('title').hidden = true;
     start();
+  });
+  $('btnNotes').addEventListener('click', (e) => { e.stopPropagation(); openNotes(); });
+  $('btnNotesClose').addEventListener('click', (e) => { e.stopPropagation(); $('notes').hidden = true; });
+  $('notes').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (e.target.id === 'notes') $('notes').hidden = true;
+  });
+  $('btnSkip').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!skipTarget) return;
+    skipReq = true;
+    pc = labelAt(skipTarget);
+    skipTarget = null;
+    $('btnSkip').hidden = true;
+    fireTap();
   });
   $('btnRestart').addEventListener('click', (e) => {
     e.stopPropagation();
