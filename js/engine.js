@@ -2721,13 +2721,29 @@
       $('ltImg').hidden = !src;
       $('ltTitle').textContent = interp(it.title);
       $('ltText').textContent = interp(it.text);
-      $('ltBtn').textContent = '불 붙이기';
       card.hidden = false;
       card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+      // every card stays 7 seconds before it can be lit, so students read it
+      const btn = $('ltBtn');
+      const READ = 7000;
+      btn.disabled = true;
+      $('ltRead').hidden = false;
+      const t0 = performance.now();
+      await new Promise((res) => {
+        const tick = () => {
+          const left = Math.max(0, READ - (performance.now() - t0));
+          $('ltRead').firstElementChild.style.width = 100 * (1 - left / READ) + '%';
+          btn.textContent = left > 0 ? `${Math.ceil(left / 1000)}초 뒤에 불 붙이기` : '불 붙이기';
+          if (left > 0) setTimeout(tick, 100); else res();
+        };
+        tick();
+      });
+      btn.disabled = false;
+      $('ltRead').hidden = true;
       await new Promise((res) => {
         const go = (e) => { if (e) e.stopPropagation(); $('ltBtn').onclick = null; box.onclick = null; res(); };
         $('ltBtn').onclick = go;
-        setTimeout(() => { box.onclick = go; }, 500);
+        box.onclick = go;
       });
       it.place.split(/\s+/).filter(Boolean).forEach((place, pi) => {
         const pt = MAP_PTS[place] || { x: 50, y: 50 };

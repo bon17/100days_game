@@ -761,6 +761,9 @@ button:focus-visible { outline: 3px solid var(--brass); outline-offset: 3px; }
 .lt-card h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(16px, 3.6vh, 26px); line-height: 1.25; }
 .lt-text { margin: 0; font-family: var(--f-body); font-weight: 700; font-size: clamp(12px, 2.5vh, 17px); line-height: 1.55; word-break: keep-all; }
 .lt-card .btn { align-self: center; }
+.lt-card .btn:disabled { filter: grayscale(0.7) brightness(0.85); cursor: default; }
+.lt-read { height: 6px; border-radius: 99px; background: rgba(43, 29, 19, 0.15); overflow: hidden; }
+.lt-read span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a77b3c, #e3bd72); }
 .finale { z-index: 46; padding: var(--top-h) 0 0; background: #000; }
 .fn-bg { filter: brightness(0.32); }
 .fn-panel { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(12px, 3vw, 36px); width: min(94%, 1100px); }
