@@ -119,6 +119,65 @@
     </div>
   </div>
 
+  <!-- episode 4 mini-game: add up bank slips -->
+  <div class="overlay abacus" id="abacus" hidden>
+    <img class="mg-bg" src="assets/bg/bg_bank.webp" alt="">
+    <div class="ch-head"><b>주판 셈</b><span id="abInfo"></span></div>
+    <div class="it-time ab-time"><span id="abTime"></span></div>
+    <div class="ab-stage">
+      <div class="ab-slip">
+        <p class="ab-kicker" id="abKicker">전표</p>
+        <p class="ab-sum" id="abSum"></p>
+      </div>
+      <div class="ab-opts" id="abOpts"></div>
+    </div>
+    <img class="ab-tool" src="assets/minigame/mg_abacus.webp" alt="">
+    <p class="ch-msg ms-msg" id="abMsg"></p>
+    <div class="ins-brief" id="abBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 주판 셈</p>
+          <h2 class="note-title">전표의 돈을 맞혀라</h2>
+          <p class="fi-text">추수가 끝나 은행에 쌀값 전표가 산더미처럼 쌓였다. 옆자리에서는 일본인 사환이 같은 일을 한다.</p>
+          <ol class="brief-steps">
+            <li>전표에 적힌 <b>두 금액을 더한 값</b>을 세 개 중에서 고른다</li>
+            <li>시간이 지나면 틀린 것으로 친다. 전표는 모두 8장</li>
+            <li><b>100전은 1원</b>이다. 학업이 높으면 시간이 늘어난다</li>
+          </ol>
+          <button class="btn fi-go" id="btnAbStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- episode 4 mini-game: rebut the speech with Yunjae's own memories -->
+  <div class="overlay rebut" id="rebut" hidden>
+    <img class="mg-bg rb-bg" src="assets/bg/bg_desk.webp" alt="">
+    <div class="ch-head"><b>연설문 속 거짓 찾기</b><span id="rbInfo"></span></div>
+    <div class="rb-paper">
+      <p class="rb-kicker">마쓰다 교관이 써 준 연설문</p>
+      <div class="rb-linebox"><p class="rb-line" id="rbLine"></p><img class="rb-stamp" id="rbStamp" src="assets/minigame/mg_stamp_x.webp" alt="거짓" hidden></div>
+      <p class="rb-res" id="rbRes"></p>
+      <p class="rb-tap" id="rbTap" hidden>화면을 눌러 계속</p>
+    </div>
+    <div class="rb-hand" id="rbHand"></div>
+    <div class="ins-brief" id="rbBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 연설문 속 거짓 찾기</p>
+          <h2 class="note-title">내가 겪은 일로 뒤집어라</h2>
+          <p class="fi-text">마쓰다 교관이 써 준 연설문. 문장마다 윤재가 직접 겪은 일과 맞지 않는 곳이 있다.</p>
+          <ol class="brief-steps">
+            <li>위에 연설문 문장이 하나씩 나온다</li>
+            <li>아래 <b>기억 카드</b> 중에서 그 문장을 뒤집을 기억을 고른다</li>
+            <li>한 번에 맞히면 ★ 하나. 틀려도 다시 고를 수 있고, 그때는 맞는 카드가 빛난다</li>
+          </ol>
+          <button class="btn fi-go" id="btnRbStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
   <div class="choices" id="choices" hidden></div>
   <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>
@@ -353,7 +412,7 @@
       </div>
       <div class="chapter-list" id="chapterList" hidden></div>
     </div>
-    <p class="title-ep">프로토타입 · 1화 ~ 3화</p>
+    <p class="title-ep">프로토타입 · 1화 ~ 4화</p>
   </div>
 
   <div class="overlay loading" id="loading">
@@ -378,6 +437,7 @@
 <script src="story/stage1.js"></script>
 <script src="story/stage2.js"></script>
 <script src="story/stage3.js"></script>
+<script src="story/stage4.js"></script>
 <script src="js/engine.js"></script>
 </body>
 </html>

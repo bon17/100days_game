@@ -31,8 +31,11 @@
     어머니기억: 'assets/bg/cg_mother.webp',
     냇가기억: 'assets/bg/cg_stream_friends.webp',
     윤재울음: 'assets/bg/cg_yunjae_cry.webp',
+    은행: 'assets/bg/bg_bank.webp',
+    빨간펜: 'assets/bg/cg_redpen.webp',
+    진수작별: 'assets/bg/cg_jinsu_leave.webp',
   };
-  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형', 감독: '동척 감독 오카다' };
+  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형', 감독: '동척 감독 오카다', 계장: '은행 계장 야마시타' };
   const MEMORY_CAPTION = {
     아버지기억: '새벽 논에서 허리 한 번 못 펴는 아버지',
     어머니기억: '밤새 남의 옷을 기우는 어머니',
@@ -50,6 +53,7 @@
     다나카: { key: 'tanaka', scale: 0.98, faces: { 기본: 'normal', 비웃음: 'smirk' } },
     아버지: { key: 'father', scale: 1.02, faces: { 기본: 'normal', 슬픔: 'sad' } },
     감독: { key: 'overseer', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
+    계장: { key: 'banker', scale: 1.04, faces: { 기본: 'normal' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
   const STATS = {
@@ -58,6 +62,7 @@
     체력: { icon: 'assets/ui/icon_stamina.webp', desc: '몸 쓰는 일에 강해요. 짐 나르기가 쉬워져요.' },
     용기: { icon: 'assets/ui/icon_courage.webp', desc: '할 말을 할 수 있어요. 대담한 선택지가 열려요.' },
   };
+  const PERK_ICON = 'assets/ui/icon_heart.webp';   // one shared picture for every '마음' (perk)
   const MONEY_ICON = 'assets/ui/icon_money.webp';
   const RELS = {
     만식: { name: '만식', up: '만식과 가까워졌다', down: '만식이 조금 서운해한다' },
@@ -68,8 +73,8 @@
   const CARDS = [
     { id: 'study', name: '공부', label: '공부만 잘하면 돼', truth: '실력만으로 오르는 사다리가 아니었다.', states: ['normal', 'hairline', 'cracked', 'broken'] },
     { id: 'safe', name: '안전', label: '가만히 있으면 안전해', truth: '가만히 있어도 안전하지 않았다. 감시는 아무나 노렸다.', states: ['normal', 'cracked', 'broken'] },
-    { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', truth: '우리 집만 챙겨서는, 우리 집도 지킬 수 없었다.', states: ['normal', 'cracked', 'broken'] },
-    { id: 'escape', name: '탈출', label: '나 하나만 빠져나가면 돼', states: ['normal'] },
+    { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', truth: '먹고사는 일과 나라 일은 따로가 아니었다. 나라를 빼앗긴 땅에서는 먹고사는 것부터 빼앗긴다.', states: ['normal', 'cracked', 'broken'] },
+    { id: 'escape', name: '탈출', label: '나 하나만 빠져나가면 돼', truth: '나 하나 빠져나가는 길은 없었다. 그 문을 지나려면 내 입으로 우리를 지워야 했다.', states: ['normal', 'cracked', 'broken'] },
     { id: 'hopeless', name: '원래', label: '태어나 보니 원래 이랬어', truth: '원래 그런 세상은 없었다. 누군가 빼앗은 것이다.', states: ['normal'] },
   ];
   const CARD_STATE = { 기본: 'normal', 실금: 'hairline', 금감: 'cracked', 깨짐: 'broken' };
@@ -147,6 +152,20 @@
             else if (l.startsWith('R ') && qs.length) qs[qs.length - 1].reply = l.slice(2).trim();
           }
           cmds.push({ type: 'interrogate', qs });
+          continue;
+        }
+        if (name === 'rebut') {
+          // M id | 이름 | 배경 그림 | 설명      (memory card)
+          // L 문장 | 정답 id (여러 개면 띄어 쓰기) | 해설
+          const mems = [];
+          const sents = [];
+          while (++i < lines.length && lines[i].trim() !== '@endrebut') {
+            const l = lines[i].trim();
+            const [a, b, c2, d] = l.slice(2).split('|').map((x) => x.trim());
+            if (l.startsWith('M ')) mems.push({ id: a, name: b || a, img: c2 || '', desc: d || '' });
+            else if (l.startsWith('L ')) sents.push({ text: a, ok: (b || '').split(/\s+/).filter(Boolean), why: c2 || '' });
+          }
+          cmds.push({ type: 'rebut', title: arg, mems, sents });
           continue;
         }
         if (name === 'exam') {
@@ -744,7 +763,7 @@
     const perk = { name, text: rest.join(' | ') };
     S.perks.push(perk);
     if (quiet) return;
-    await modal({ kicker: '새로운 마음을 얻었다', title: name, text: perk.text, img: STATS.용기.icon, icon: true, saved: '가방 > 윤재에서 볼 수 있어요.' });
+    await modal({ kicker: '새로운 마음을 얻었다', title: name, text: perk.text, img: PERK_ICON, icon: true, saved: '가방 > 윤재에서 볼 수 있어요.' });
   }
 
   /* ---------- bag ---------- */
@@ -806,7 +825,7 @@
       h.style.marginTop = '8px';
       c.appendChild(h);
       if (!S.perks.length) empty(c, '아직 없어요. 믿음이 깨지면 새로운 마음이 생겨요.');
-      S.perks.forEach((p) => row(c, STATS.용기.icon, p.name, null, p.text));
+      S.perks.forEach((p) => row(c, PERK_ICON, p.name, null, p.text));
     } else if (bagTab === '소지품') {
       const a = col();
       if (!S.items.length) { empty(a, '아직 가진 물건이 없어요.'); }
@@ -927,7 +946,7 @@
         b.style.animationDelay = i * 0.05 + 's';
         b.innerHTML = '<b></b><small></small>';
         b.querySelector('b').textContent = n;
-        b.querySelector('small').textContent = sp.hint;
+        b.querySelector('small').textContent = (S.spotHints || {})[n] || sp.hint;
         b.addEventListener('click', (e) => { e.stopPropagation(); res(n); });
         box.appendChild(b);
       });
@@ -963,7 +982,7 @@
       const b = document.createElement('b');
       b.textContent = n;
       const s = document.createElement('small');
-      s.textContent = sp.hint;
+      s.textContent = (S.spotHints || {})[n] || sp.hint;
       d.append(b, s);
       box.appendChild(d);
     });
@@ -1886,6 +1905,159 @@
     box.hidden = true;
   }
 
+  /* ---------- episode 4 mini-game: add up bank slips with an abacus ---------- */
+  function wonText(x) {
+    const w = Math.floor(x / 100);
+    const j = x % 100;
+    if (!w) return `${j}전`;
+    return j ? `${w}원 ${j}전` : `${w}원`;
+  }
+  async function abacusGame() {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('abacus');
+    const opts = $('abOpts');
+    const msg = $('abMsg');
+    const bar = $('abTime');
+    opts.textContent = '';
+    msg.textContent = '';
+    $('abSum').textContent = '';
+    $('abKicker').textContent = '전표';
+    $('abInfo').textContent = '';
+    box.hidden = false;
+    await briefing('abBrief', 'btnAbStart');
+    const rounds = 8;
+    const secs = Math.max(4, Math.min(8, 5 + 0.5 * ((S.vars.학업 || 0) - 4)));
+    const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+    let correct = 0;
+    for (let r = 0; r < rounds; r++) {
+      $('abInfo').textContent = `전표 ${r + 1} / ${rounds} · 맞힘 ${correct}`;
+      msg.textContent = '두 금액을 더한 값을 고르세요';
+      const a = r < 4 ? rnd(12, 89) : 100 + rnd(10, 95);
+      const b = rnd(15, 89);
+      const ans = a + b;
+      $('abSum').textContent = `${wonText(a)} + ${wonText(b)}`;
+      const wrongs = [10, -10, 1, -1, 9, -9, 11, -11].map((d) => ans + d).filter((v) => v > 0);
+      const picks = [ans];
+      while (picks.length < 3) {
+        const v = wrongs.splice(Math.floor(Math.random() * wrongs.length), 1)[0];
+        if (!picks.includes(v)) picks.push(v);
+      }
+      picks.sort(() => Math.random() - 0.5);
+      opts.textContent = '';
+      const btns = picks.map((v) => {
+        const b2 = document.createElement('button');
+        b2.type = 'button';
+        b2.className = 'btn ab-opt';
+        b2.textContent = wonText(v);
+        opts.appendChild(b2);
+        return b2;
+      });
+      const pick = await new Promise((res) => {
+        const t0 = performance.now();
+        const tick = setInterval(() => {
+          const left = Math.max(0, secs * 1000 - (performance.now() - t0));
+          bar.style.width = (100 * left) / (secs * 1000) + '%';
+          if (left <= 0) { clearInterval(tick); res(-1); }
+        }, 50);
+        btns.forEach((b2, i) => b2.addEventListener('click', (e) => { e.stopPropagation(); clearInterval(tick); res(i); }));
+      });
+      const right = picks.indexOf(ans);
+      btns[right].classList.add('right');
+      if (pick === right) { correct += 1; msg.textContent = '딱 맞았다!'; }
+      else { if (pick >= 0) btns[pick].classList.add('wrong'); msg.textContent = pick < 0 ? `시간이 지났다… 답은 ${wonText(ans)}` : `틀렸다… 답은 ${wonText(ans)}`; }
+      $('abInfo').textContent = `전표 ${r + 1} / ${rounds} · 맞힘 ${correct}`;
+      await sleep(950);
+    }
+    opts.textContent = '';
+    const rival = 4 + (Math.random() < 0.5 ? 0 : 1);   // the Japanese errand boy next to Yunjae
+    const grade = correct >= 8 ? 'S' : correct >= 6 ? 'A' : correct >= 4 ? 'B' : 'C';
+    S.vars.주판 = correct;
+    S.vars.사환 = rival;
+    S.vars.주판차 = correct - rival;
+    recordGrade('주판셈', grade);
+    $('abKicker').textContent = '결과';
+    $('abSum').textContent = `윤재 ${correct}장 · 일본인 사환 ${rival}장`;
+    msg.textContent = `전표 ${rounds}장 중 ${correct}장을 맞혔다 · 등급 ${grade} · 화면을 눌러 계속`;
+    await waitBoxTap(box);
+    box.hidden = true;
+  }
+
+  /* ---------- episode 4 mini-game: rebut the speech with Yunjae's own memories ---------- */
+  async function rebutGame(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    const box = $('rebut');
+    const hand = $('rbHand');
+    const lineEl = $('rbLine');
+    const res = $('rbRes');
+    const stamp = $('rbStamp');
+    hand.textContent = '';
+    lineEl.textContent = '';
+    res.textContent = '';
+    stamp.hidden = true;
+    $('rbInfo').textContent = '';
+    box.hidden = false;
+    await briefing('rbBrief', 'btnRbStart');
+    const cards = c.mems.map((m) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rb-card';
+      b.innerHTML = `<img alt="" src="${BG[m.img] || ''}"><b>${m.name}</b><small>${m.desc}</small>`;
+      hand.appendChild(b);
+      return b;
+    });
+    let first = 0;
+    for (let i = 0; i < c.sents.length; i++) {
+      const sent = c.sents[i];
+      $('rbInfo').textContent = `${i + 1} / ${c.sents.length} · ★ ${first}`;
+      stamp.hidden = true;
+      lineEl.classList.remove('struck');
+      res.textContent = '이 문장을 뒤집을 윤재의 기억을 아래에서 고르세요';
+      res.className = 'rb-res';
+      cards.forEach((b) => b.classList.remove('hint', 'wrong', 'right'));
+      await typeRich(lineEl, `“${sent.text}”`, 22);
+      let tries = 0;
+      for (;;) {
+        const k = await new Promise((r) => cards.forEach((b, j) => { b.onclick = (e) => { e.stopPropagation(); r(j); }; }));
+        cards.forEach((b) => { b.onclick = null; });
+        tries += 1;
+        if (sent.ok.includes(c.mems[k].id)) {
+          if (tries === 1) first += 1;
+          cards[k].classList.remove('hint');
+          cards[k].classList.add('right', 'used');
+          lineEl.classList.add('struck');
+          stamp.hidden = false;
+          res.className = 'rb-res ok';
+          res.textContent = sent.why;
+          break;
+        }
+        cards[k].classList.remove('wrong'); void cards[k].offsetWidth; cards[k].classList.add('wrong');
+        res.className = 'rb-res';
+        res.textContent = '그 기억으로는 이 문장을 뒤집기 어려워요. 다시 골라 보세요. 빛나는 카드가 힌트예요.';
+        c.mems.forEach((m, j) => { if (sent.ok.includes(m.id)) cards[j].classList.add('hint'); });
+      }
+      $('rbInfo').textContent = `${i + 1} / ${c.sents.length} · ★ ${first}`;
+      await sleep(500);
+      $('rbTap').hidden = false;
+      await waitBoxTap(box);
+      $('rbTap').hidden = true;
+    }
+    const n = c.sents.length;
+    const grade = first >= n ? 'S' : first >= n - 1 ? 'A' : first >= Math.ceil(n / 2) ? 'B' : 'C';
+    S.vars.거짓찾기 = first;
+    recordGrade('거짓찾기', grade);
+    stamp.hidden = true;
+    lineEl.classList.remove('struck');
+    lineEl.textContent = `연설문 ${n}문장을 모두 뒤집었다`;
+    res.className = 'rb-res ok';
+    res.textContent = `한 번에 맞힌 문장 ${first}개 · 등급 ${grade}`;
+    $('rbTap').hidden = false;
+    await waitBoxTap(box);
+    $('rbTap').hidden = true;
+    box.hidden = true;
+  }
+
   /* ---------- chapter title and chapter end ---------- */
   async function chapterCard(arg) {
     const [num, title, cardName] = arg.split('|').map((x) => x.trim());
@@ -2000,7 +2172,7 @@
       const data = {
         pc: atPc, vars: S.vars, flags: [...S.flags], cards: S.cards, seenTerms: [...S.seenTerms],
         notes: S.notes, items: S.items, perks: S.perks, quests: S.quests, hud: hudList(), day: S.day, bg: S.bg, ep: S.ep,
-        records: S.records, badges: S.badges, goal: S.goal,
+        records: S.records, badges: S.badges, goal: S.goal, spotHints: S.spotHints || {},
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (err) { /* storage may be unavailable */ }
@@ -2085,6 +2257,7 @@
       }
       case 'episode': {
         S.ep = Number(c.arg) || 1;
+        S.spotHints = {};
         Object.keys(S.vars).forEach((k) => { if (k.startsWith('방문_')) delete S.vars[k]; });
         return;
       }
@@ -2096,6 +2269,13 @@
       case 'reap': return reapGame();
       case 'measure': return measureGame();
       case 'ricesplit': return splitGame();
+      case 'abacus': return abacusGame();
+      case 'spothint': {
+        const [n, hint] = c.arg.split('|').map((x) => x.trim());
+        S.spotHints = { ...(S.spotHints || {}), [n]: hint || '' };
+        return;
+      }
+      case 'rebut': return rebutGame(c);
       case 'waver': return waver(c.arg);
       case 'get': {
         const name = c.arg.trim();
@@ -2198,6 +2378,7 @@
       S.records = fromSave.records || {};
       S.badges = fromSave.badges || [];
       S.goal = fromSave.goal || null;
+      S.spotHints = fromSave.spotHints || {};
       fromSave.hud.forEach((c) => $('game').classList.add(c));
       $('game').classList.toggle('hud-any', fromSave.hud.length > 0);
       if (fromSave.bg) setBg(fromSave.bg);
