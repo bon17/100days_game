@@ -309,6 +309,49 @@
     </div>
   </div>
 
+  <!-- ending: from 1929 to 1945, lights gather on a dark map -->
+  <div class="overlay lights" id="lights" hidden>
+    <div class="lt-wrap">
+      <div class="lt-map">
+        <img class="lt-img" src="assets/bg/map_eastasia.webp" alt="">
+        <div class="lt-dots" id="ltDots"></div>
+        <p class="lt-year" id="ltYear"></p>
+        <p class="lt-dawn" id="ltDawn"></p>
+      </div>
+      <aside class="lt-side">
+        <p class="lt-count" id="ltCount"></p>
+        <div class="lt-card" id="ltCard" hidden>
+          <p class="lt-kind" id="ltKind"></p>
+          <img id="ltImg" alt="">
+          <h3 id="ltTitle"></h3>
+          <p class="lt-text" id="ltText"></p>
+          <button class="btn" id="ltBtn" type="button">불 붙이기</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- the ending screen -->
+  <div class="overlay finale" id="finale" hidden>
+    <img class="mg-bg fn-bg" src="assets/bg/cg_liberation.webp" alt="">
+    <div class="fn-panel">
+      <img class="fn-card" src="assets/card/card_hope.webp" alt="">
+      <div class="fn-body">
+        <p class="note-kicker">엔딩</p>
+        <h2 class="fn-title">그리고 우리가 되찾았다</h2>
+        <p class="fn-name" id="fnName"></p>
+        <p class="fn-line" id="fnLine"></p>
+        <h3>윤재의 100일 · 깨진 믿음</h3>
+        <ul class="fn-beliefs" id="fnBeliefs"></ul>
+        <p class="fn-lights" id="fnLights"></p>
+        <p class="fn-last">태어나 보니 식민지였다. 그리고 우리가 되찾았다. — 끝</p>
+        <p class="fn-count" id="fnCount"></p>
+        <ul class="fn-hints" id="fnHints"></ul>
+        <div class="fn-btns"><button class="btn" id="btnFnRetry" type="button">5화부터 다른 선택 해 보기</button><button class="btn" id="btnFnRestart" type="button">처음부터</button></div>
+      </div>
+    </div>
+  </div>
+
   <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
   <div class="choices" id="choices" hidden></div>
   <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>

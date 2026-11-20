@@ -66,6 +66,11 @@
     순사: { key: 'constable', scale: 1.04, faces: { 기본: 'normal' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
+  const MAP_PTS = {
+    광주: { x: 60.5, y: 66 }, 나주: { x: 59.3, y: 67.8 }, 서울: { x: 59.5, y: 46 }, 평양: { x: 56.8, y: 36.5 }, 대구: { x: 66.5, y: 59 },
+    만주: { x: 60, y: 12 }, 상하이: { x: 37, y: 86 }, 충칭: { x: 3, y: 80 }, 카이로: { x: 2.5, y: 30 },
+  };
+  const ENDINGS_KEY = 'colony15-endings';
   const STATS = {
     학업: { icon: 'assets/ui/icon_study.webp', desc: '시험과 공부에 강해져요. 시험 시간이 늘어나요.' },
     눈치: { icon: 'assets/ui/icon_eye.webp', desc: '숨은 것과 남의 속마음을 알아채요.' },
@@ -163,6 +168,39 @@
             else if (l.startsWith('R ') && qs.length) qs[qs.length - 1].reply = l.slice(2).trim();
           }
           cmds.push({ type: 'interrogate', qs });
+          continue;
+        }
+        if (name === 'lights') {
+          // H 해 | 장소 | 제목 | 설명 | 그림        함께한 사람들의 불빛 (실제 역사)
+          // U 해 | 장소 | 인물 | 제목 | 설명        우리의 불빛 (인물의 ♥가 4 이상이면 크게)
+          //   해 앞에 [표시] 를 쓰면 그 표시가 있을 때만 나와요. 예: U [길_강당] 1930년대 | ...
+          const items = [];
+          while (++i < lines.length && lines[i].trim() !== '@endlights') {
+            const l = lines[i].trim();
+            if (!/^[HU] /.test(l)) continue;
+            const f = l.slice(2).split('|').map((x) => x.trim());
+            const cm = f[0].match(/^\[([^\]]+)\]\s*(.*)$/);
+            const when = cm ? cm[1] : '';
+            const year = cm ? cm[2] : f[0];
+            if (l[0] === 'H') items.push({ kind: 'H', when, year, place: f[1], title: f[2], text: f[3] || '', img: f[4] || '' });
+            else items.push({ kind: 'U', when, year, place: f[1], who: f[2], title: f[3], text: f[4] || '' });
+          }
+          cmds.push({ type: 'lights', title: arg, items });
+          continue;
+        }
+        if (name === 'finale') {
+          // N 표시 | 엔딩 이름 | 한 줄 / B 화 · 믿음 | 깨진 이유 / H 표시 | 아직 못 본 엔딩 힌트
+          const ends = [];
+          const beliefs = [];
+          const hints = [];
+          while (++i < lines.length && lines[i].trim() !== '@endfinale') {
+            const l = lines[i].trim();
+            const f = l.slice(2).split('|').map((x) => x.trim());
+            if (l.startsWith('N ')) ends.push({ flag: f[0], name: f[1], line: f[2] || '' });
+            else if (l.startsWith('B ')) beliefs.push({ title: f[0], why: f[1] || '' });
+            else if (l.startsWith('H ')) hints.push({ flag: f[0], text: f[1] || '' });
+          }
+          cmds.push({ type: 'finale', ends, beliefs, hints });
           continue;
         }
         if (name === 'mimeo' || name === 'formation') {
@@ -2652,6 +2690,99 @@
     box.hidden = true;
   }
 
+  /* ---------- ending: from 1929 to 1945, lights gather on a dark map ---------- */
+  async function lightsScene(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const box = $('lights');
+    const dots = $('ltDots');
+    const card = $('ltCard');
+    dots.textContent = '';
+    box.classList.remove('dawn');
+    $('ltYear').textContent = '1929';
+    const items = c.items.filter((it) => !it.when || cond(it.when));
+    const placeN = {};
+    const OFF = [[0, 0], [1.6, -1.3], [-1.6, -1.3], [1.6, 1.5], [-1.6, 1.5], [0, -2.6], [0, 2.8], [3.2, 0], [-3.2, 0]];
+    let ours = 0;
+    let others = 0;
+    const count = () => { $('ltCount').textContent = `우리의 불빛 ${ours} · 함께한 사람들의 불빛 ${others}`; };
+    count();
+    box.hidden = false;
+    for (const it of items) {
+      $('ltYear').textContent = it.year;
+      const mine = it.kind === 'U';
+      const big = mine && (it.who === '윤재' || (S.vars[it.who] || 0) >= 4);
+      const src = mine ? (CHARS[it.who] ? charSrc(CHARS[it.who].key, 'normal') : '') : BG[it.img] || '';
+      card.className = 'lt-card ' + (mine ? 'ours' : 'others');
+      $('ltKind').textContent = mine ? '우리의 불빛' : '함께한 사람들의 불빛 · 실제 역사';
+      $('ltImg').src = src;
+      $('ltImg').className = mine ? 'face' : '';
+      $('ltImg').hidden = !src;
+      $('ltTitle').textContent = interp(it.title);
+      $('ltText').textContent = interp(it.text);
+      $('ltBtn').textContent = '불 붙이기';
+      card.hidden = false;
+      card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+      await new Promise((res) => {
+        const go = (e) => { if (e) e.stopPropagation(); $('ltBtn').onclick = null; box.onclick = null; res(); };
+        $('ltBtn').onclick = go;
+        setTimeout(() => { box.onclick = go; }, 500);
+      });
+      it.place.split(/\s+/).filter(Boolean).forEach((place, pi) => {
+        const pt = MAP_PTS[place] || { x: 50, y: 50 };
+        const k = (placeN[place] = (placeN[place] || 0) + 1) - 1;
+        const off = OFF[k % OFF.length];
+        const d = document.createElement('div');
+        d.className = 'lt-dot ' + (mine ? 'ours' : 'others') + (big ? ' big' : '');
+        d.style.left = pt.x + off[0] + '%';
+        d.style.top = pt.y + off[1] + '%';
+        d.style.animationDelay = pi * 0.15 + 's';
+        d.innerHTML = `<i></i>${k === 0 ? `<span>${place}</span>` : ''}`;
+        dots.appendChild(d);
+      });
+      if (mine) ours += 1; else others += 1;
+      count();
+      await sleep(450);
+    }
+    S.vars.우리불빛 = ours;
+    S.vars.함께불빛 = others;
+    card.hidden = true;
+    $('ltYear').textContent = '1945. 8. 15.';
+    box.classList.add('dawn');
+    $('ltDawn').textContent = '모인 불빛이 어둠을 밝혔다';
+    await sleep(1800);
+    await waitBoxTap(box);
+    box.classList.remove('dawn');
+    $('ltDawn').textContent = '';
+    box.hidden = true;
+  }
+
+  /* ---------- ending screen ---------- */
+  function seenEndings(add) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(ENDINGS_KEY) || '[]'); } catch (err) { list = []; }
+    if (add && !list.includes(add)) { list.push(add); try { localStorage.setItem(ENDINGS_KEY, JSON.stringify(list)); } catch (err) { /* ignore */ } }
+    return list;
+  }
+  function showFinale(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const end = c.ends.find((e) => S.flags.has(e.flag)) || c.ends[0];
+    const seen = seenEndings(end.flag);
+    $('fnName').textContent = end.name;
+    $('fnLine').textContent = end.line;
+    $('fnBeliefs').innerHTML = c.beliefs.map((b) => `<li><b>${b.title}</b><span>${b.why}</span></li>`).join('');
+    $('fnLights').textContent = `윤재와 친구들이 켠 불빛 ${S.vars.우리불빛 || 0}개, 함께한 사람들의 불빛 ${S.vars.함께불빛 || 0}개가 모여 1945년 8월 15일을 밝혔다.`;
+    $('fnCount').textContent = `모은 엔딩 ${seen.filter((f) => c.ends.some((e) => e.flag === f)).length} / ${c.ends.length}`;
+    const hints = c.hints.filter((h) => !seen.includes(h.flag)).map((h) => h.text);
+    $('fnHints').innerHTML = hints.map((h) => `<li>${h}</li>`).join('');
+    $('fnHints').hidden = !hints.length;
+    clearSave();
+    $('finale').hidden = false;
+  }
+
   /* ---------- finale: the five broken beliefs gather into one new card ---------- */
   async function hopeCard() {
     $('dialog').hidden = true;
@@ -2898,6 +3029,8 @@
       case 'hub': return hub(c.arg, id);
       case 'hopecard': return hopeCard();
       case 'mimeo': return mimeoGame(c);
+      case 'lights': return lightsScene(c);
+      case 'finale': showFinale(c); pc = prog.cmds.length; return;
       case 'signal': return signalGame();
       case 'formation': return formationGame(c);
       case 'gradevar': {
@@ -2980,7 +3113,8 @@
   }
 
   const OVERLAYS = ['endscreen', 'choices', 'dialog', 'exam', 'result', 'cardshow', 'notebook', 'cardsintro', 'daycard',
-    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro', 'interro', 'dice', 'reap', 'measure', 'split'];
+    'tip', 'slide', 'btnSkip', 'noteshow', 'bag', 'cardping', 'mapview', 'carry', 'beliefview', 'inspect', 'chase', 'freeintro', 'interro', 'dice', 'reap', 'measure', 'split',
+    'abacus', 'rebut', 'hub', 'rhythm', 'hope', 'mimeo', 'signal', 'formation', 'lights', 'finale'];
 
   function start(fromSave, label) {
     runId += 1;
@@ -3052,6 +3186,7 @@
       'assets/minigame/mg_abacus.webp', 'assets/minigame/mg_crowd.webp', 'assets/card/card_hope.webp', PERK_ICON,
       'assets/minigame/mg_mimeo.webp', 'assets/minigame/mg_roller.webp', 'assets/minigame/mg_bell.webp',
       'assets/minigame/mg_footsteps.webp', 'assets/minigame/mg_police_line.webp', 'assets/bg/bg_school_wall.webp',
+      'assets/bg/map_eastasia.webp',
     ];
     await preload(list, (p) => {
       $('ldFill').style.width = Math.round(p * 100) + '%';
@@ -3077,6 +3212,8 @@
   $('btnStart').addEventListener('click', (e) => { e.stopPropagation(); clearSave(); $('title').hidden = true; start(); });
   $('btnContinue').addEventListener('click', (e) => { e.stopPropagation(); const s = loadSave(); $('title').hidden = true; start(s); });
   $('btnRestart').addEventListener('click', (e) => { e.stopPropagation(); clearSave(); start(); });
+  $('btnFnRetry').addEventListener('click', (e) => { e.stopPropagation(); clearSave(); $('finale').hidden = true; start(null, '바로:5화'); });
+  $('btnFnRestart').addEventListener('click', (e) => { e.stopPropagation(); clearSave(); $('finale').hidden = true; start(); });
   $('btnNext').addEventListener('click', (e) => { e.stopPropagation(); if (nextResolver) { const r = nextResolver; nextResolver = null; r(); } });
   $('btnChapters').addEventListener('click', (e) => { e.stopPropagation(); $('chapterList').hidden = !$('chapterList').hidden; });
   $('btnBag').addEventListener('click', (e) => { e.stopPropagation(); openBag(); });
