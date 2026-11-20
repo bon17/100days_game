@@ -3,6 +3,8 @@
 중3 대상 역사 RPG(1929 광주, 광주학생항일운동). 태블릿·폰 **가로 화면** 웹 게임. **1~6화 + 1945 광복 에필로그까지 완성**, 사용자 플레이 테스트 단계.
 - 저장소 `bon17/100days_game`, 브랜치 `claude/jolly-goodall-11trek` (모든 작업 푸시 완료)
 - 공개 링크(비공개 아티팩트): https://claude.ai/artifact/UCm9wuSbdzcNz8Vz3DKGni
+- **Vercel 배포(공개)**: https://born-into-colony.vercel.app (프로젝트 `born-into-colony`)
+  - 다시 배포: 게임 파일만(`index.html css js story assets`, `art_src` 제외) 임시 폴더 `born-into-colony/`에 복사 → 그 폴더에서 `npx --yes vercel@66.5.0 login`(사용자가 화면의 vercel.com/oauth/device 주소에서 승인, 컨테이너가 바뀌면 다시 필요) → `npx --yes vercel@66.5.0 deploy --prod --yes`.
   - 다른 대화에서 갱신: 이 URL을 `read` → `python3 -I tools/build_preview.py <출력.html>` → 같은 `url`로 publish. **새 그림은 `files`에 경로를 넣어야 올라감**(기존 그림은 이미 올라가 있음).
 
 ## 구조
