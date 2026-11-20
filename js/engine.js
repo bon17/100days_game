@@ -165,6 +165,18 @@
           cmds.push({ type: 'interrogate', qs });
           continue;
         }
+        if (name === 'mimeo' || name === 'formation') {
+          // @mimeo 제목 … P 격문 한 줄 … @endmimeo   /   @formation 제목 … C 구호 … @endformation
+          const end = name === 'mimeo' ? '@endmimeo' : '@endformation';
+          const tag = name === 'mimeo' ? 'P ' : 'C ';
+          const items = [];
+          while (++i < lines.length && lines[i].trim() !== end) {
+            const l = lines[i].trim();
+            if (l.startsWith(tag)) items.push(l.slice(2).trim());
+          }
+          cmds.push({ type: name, title: arg, items });
+          continue;
+        }
         if (name === 'rhythm') {
           // @rhythm 게임이름 | 모드(연설/구호) | 배경
           // T 구절(띄어 쓴 마디마다 한 박) | 기억 그림 | stop
@@ -2337,6 +2349,309 @@
     mem.hidden = true;
   }
 
+  /* ---------- episode 6: mimeograph printing (swipe the roller, hide at footsteps) ---------- */
+  async function mimeoGame(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const box = $('mimeo');
+    const stage = $('mmStage');
+    const sheet = $('mmSheet');
+    const roller = $('mmRoller');
+    const msg = $('mmMsg');
+    const meter = $('mmMeter');
+    $('mmText').innerHTML = c.items.map((t, k) => (k === 0 ? `<b>${t}</b>` : `<span>${k}. ${t}</span>`)).join('');
+    $('mmWarn').hidden = true;
+    msg.textContent = '';
+    meter.hidden = true;
+    box.hidden = false;
+    await briefing('mmBrief', 'btnMmStart');
+    const swipes = 10;
+    const per = 200;
+    let sheets = 0;
+    const warnAt = new Set([2 + Math.floor(Math.random() * 2), 6 + Math.floor(Math.random() * 2)]);
+    const warnSecs = Math.min(3.6, 2 + 0.25 * (S.vars.눈치 || 0));
+    const info = (n) => { $('mmInfo').textContent = `${Math.min(n + 1, swipes)} / ${swipes}번째 · 찍은 격문 ${sheets}장`; };
+    // the sheet spans 14%..86% of the frame; keep the roller on the paper
+    const place = (fx) => { roller.style.left = 14 + Math.max(0, Math.min(1, fx)) * 72 + '%'; };
+    for (let n = 0; n < swipes; n++) {
+      info(n);
+      place(0);
+      if (warnAt.has(n)) {
+        // footsteps outside: shown on screen, no sound needed
+        const w = $('mmWarn');
+        w.hidden = false;
+        box.classList.add('alarm');
+        const hidden = await new Promise((res) => {
+          const t0 = performance.now();
+          const tick = setInterval(() => {
+            const left = Math.max(0, warnSecs * 1000 - (performance.now() - t0));
+            $('mmWarnTime').style.width = (100 * left) / (warnSecs * 1000) + '%';
+            if (left <= 0) { clearInterval(tick); res(false); }
+          }, 50);
+          $('btnMmHide').onclick = (e) => { e.stopPropagation(); clearInterval(tick); res(true); };
+        });
+        $('btnMmHide').onclick = null;
+        w.hidden = true;
+        box.classList.remove('alarm');
+        if (hidden) msg.textContent = '휴… 발소리가 지나갔다. 다시 찍자';
+        else { sheets = Math.max(0, sheets - per); msg.textContent = `들킬 뻔했다! 찍어 둔 격문 ${per}장을 아궁이에 넣었다`; }
+        info(n);
+        await sleep(1200);
+      }
+      msg.textContent = '롤러를 왼쪽 끝에서 오른쪽 끝까지 한 번에 쭉 미세요';
+      roller.classList.add('ready');
+      const r = await new Promise((res) => {
+        let startX = null;
+        let t0 = 0;
+        let lastX = 0;
+        const fx = (e) => { const rc = sheet.getBoundingClientRect(); return (e.clientX - rc.left) / rc.width; };
+        stage.onpointerdown = (e) => { e.stopPropagation(); e.preventDefault(); startX = fx(e); lastX = startX; t0 = performance.now(); place(startX); try { stage.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } };
+        stage.onpointermove = (e) => { if (startX === null) return; lastX = fx(e); place(lastX); };
+        const up = (e) => {
+          if (startX === null) return;
+          e.stopPropagation();
+          const dt = performance.now() - t0;
+          const from = startX;
+          startX = null;
+          res({ from, to: lastX, dt });
+        };
+        stage.onpointerup = up;
+        stage.onpointercancel = up;
+      });
+      stage.onpointerdown = stage.onpointermove = stage.onpointerup = stage.onpointercancel = null;
+      roller.classList.remove('ready');
+      let verdict;
+      if (r.from > 0.3 || r.to < 0.75) verdict = 'short';
+      else if (r.dt < 420) verdict = 'fast';
+      else if (r.dt > 1700) verdict = 'slow';
+      else verdict = 'ok';
+      // speed meter: where this swipe fell between too fast and too slow
+      meter.hidden = verdict === 'short';
+      $('mmMark').style.left = Math.max(2, Math.min(98, ((r.dt - 150) / (2200 - 150)) * 100)) + '%';
+      if (verdict === 'ok') {
+        sheets += per;
+        sheet.classList.remove('printed'); void sheet.offsetWidth; sheet.classList.add('printed');
+        msg.textContent = `잘 찍혔다! 격문 ${per}장`;
+      } else {
+        sheet.classList.remove('smudge', 'faint');
+        if (verdict === 'fast') sheet.classList.add('faint');
+        if (verdict === 'slow') sheet.classList.add('smudge');
+        msg.textContent = verdict === 'fast' ? '너무 빨랐다… 글씨가 흐리게 찍혔다'
+          : verdict === 'slow' ? '너무 느렸다… 잉크가 번졌다' : '끝까지 밀어야 해요. 왼쪽 끝에서 오른쪽 끝까지!';
+        if (verdict === 'short') n -= 1;   // a half swipe does not use up a turn
+      }
+      info(n);
+      await sleep(900);
+      sheet.classList.remove('smudge', 'faint', 'printed');
+    }
+    meter.hidden = true;
+    const grade = sheets >= 2000 ? 'S' : sheets >= 1600 ? 'A' : sheets >= 1000 ? 'B' : 'C';
+    S.vars.인쇄 = sheets;
+    recordGrade('등사판', grade);
+    msg.textContent = `격문 ${sheets}장을 찍었다 · 등급 ${grade} · 화면을 눌러 계속`;
+    await sleep(400);
+    await waitBoxTap(box);
+    box.hidden = true;
+  }
+
+  /* ---------- episode 6: wait outside the school wall for the class bell ---------- */
+  async function signalGame() {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const box = $('signal');
+    const cop = $('sgCop');
+    const look = $('sgLook');
+    const msg = $('sgMsg');
+    const bell = $('sgBell');
+    bell.hidden = true;
+    msg.textContent = '';
+    box.hidden = false;
+    await briefing('sgBrief', 'btnSgStart');
+    let progress = 0;
+    let slips = 0;
+    let state = 'away';
+    let phase = 'approach';
+    let bellAt = 0;
+    let done = null;
+    const setState = (st) => {
+      state = st;
+      box.dataset.cop = st;
+      $('sgLookText').textContent = st === 'look' ? '순사가 보고 있다 — 멈춰!' : st === 'turn' ? '순사가 돌아보려 한다!' : '순사가 등을 돌렸다 — 지금!';
+    };
+    const render = () => {
+      $('sgFill').style.width = progress + '%';
+      $('sgInfo').textContent = `들킬 뻔한 횟수 ${slips}`;
+    };
+    setState('away');
+    render();
+    msg.textContent = '순사가 등을 돌렸을 때 화면을 눌러 담장 아래로 다가가세요';
+    const t0 = performance.now();
+    let next = t0 + 2200;
+    const tap = (e) => {
+      if (e) e.stopPropagation();
+      if (done) return;
+      if (phase === 'approach') {
+        if (state === 'look') { slips += 1; progress = Math.max(0, progress - 15); msg.textContent = '들킬 뻔했다! 얼른 담장에 몸을 붙였다'; box.classList.remove('hit'); void box.offsetWidth; box.classList.add('hit'); }
+        else { progress = Math.min(100, progress + 9); msg.textContent = progress >= 100 ? '' : '한 걸음, 또 한 걸음…'; }
+        if (progress >= 100) { phase = 'wait'; bellAt = performance.now() + 1500 + Math.random() * 2500; msg.textContent = '담장 아래에 도착했다. 수업 시작 종을 기다려라 — 종이 뜨면 바로 누르세요'; }
+      } else if (phase === 'wait') {
+        slips += 1; msg.textContent = '아직이야! 종이 울릴 때까지 기다려'; box.classList.remove('hit'); void box.offsetWidth; box.classList.add('hit');
+      } else if (phase === 'bell') {
+        const dt = performance.now() - bellAt;
+        done = { dt };
+      }
+      render();
+    };
+    box.onclick = tap;
+    const key = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); } };
+    window.addEventListener('keydown', key);
+    const windowMs = 1300 + 100 * (S.vars.눈치 || 0);
+    await new Promise((res) => {
+      const loop = () => {
+        const now = performance.now();
+        if (phase !== 'bell' && now >= next) {
+          if (state === 'away') { setState('turn'); next = now + 700; }
+          else if (state === 'turn') { setState('look'); next = now + 1400 + Math.random() * 800; }
+          else { setState('away'); next = now + 1800 + Math.random() * 1400; }
+        }
+        if (phase === 'wait' && now >= bellAt) { phase = 'bell'; bell.hidden = false; setState('away'); }
+        if (phase === 'bell' && !done && now - bellAt > windowMs) done = { dt: windowMs + 1 };
+        if (done) { res(); return; }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+    box.onclick = null;
+    window.removeEventListener('keydown', key);
+    const onTime = done.dt <= windowMs;
+    const grade = onTime && slips === 0 ? 'S' : slips <= 1 ? 'A' : slips <= 3 ? 'B' : 'C';
+    S.vars.신호실수 = slips;
+    recordGrade('신호', grade);
+    msg.textContent = (onTime ? '종이 울리자마자 격문을 담장 너머로 던졌다! 교실 문이 한꺼번에 열린다'
+      : '조금 늦었지만, 학생들이 먼저 교실을 뛰쳐나왔다') + ` · 등급 ${grade} · 화면을 눌러 계속`;
+    await sleep(500);
+    await waitBoxTap(box);
+    bell.hidden = true;
+    box.hidden = true;
+  }
+
+  /* ---------- episode 6: hold the line in front of the prison (hold = link arms, tap = step) ---------- */
+  async function formationGame(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const box = $('formation');
+    const msg = $('fmMsg');
+    const banner = $('fmBanner');
+    const police = $('fmPolice');
+    const holdBar = $('fmHold');
+    // who stands in the line: Yunjae, Gicheol, and the comrades gathered in episode 6
+    const row = $('fmRow');
+    const people = [['윤재', '윤재'], ['기철', '기철'], ['만식', '만식'], ['정희', '정희'], ['진수', '진수'], ['학생들', '독서회']]
+      .filter(([n]) => n === '윤재' || n === '기철' || S.flags.has('합류_' + n));
+    row.innerHTML = people.map(([n, img]) => {
+      const src = CHARS[img] ? charSrc(CHARS[img].key, 'normal') : BG[img] || '';
+      return `<figure class="${CHARS[img] ? 'face' : ''}"><img alt="" src="${src}"><figcaption>${(RELS[n] || {}).name || n}</figcaption></figure>`;
+    }).join('');
+    const comrades = Math.max(0, people.length - 2);
+    $('fmBriefText').textContent = `광주 형무소까지 행진한다. 함께하는 동료 ${comrades}명이 대열을 채운다. 동료가 많을수록 버티기 쉽고 한 번에 더 멀리 간다.`;
+    banner.textContent = '';
+    banner.className = 'fm-banner';
+    $('fmChant').textContent = '';
+    msg.textContent = '';
+    box.hidden = false;
+    await briefing('fmBrief', 'btnFmStart');
+    const goal = 12;
+    let dist = 0;
+    let pushedBack = 0;
+    let holding = false;
+    let phase = 'rest';
+    let steps = 0;
+    const maxSteps = 2 + Math.floor(comrades / 2);
+    const need = Math.max(0.55, 0.8 - 0.06 * comrades);
+    let chantI = 0;
+    const render = () => {
+      $('fmFill').style.width = (100 * dist) / goal + '%';
+      $('fmInfo').textContent = `형무소까지 ${Math.max(0, goal - dist)}걸음 · 동료 ${comrades}명`;
+    };
+    const down = (e) => {
+      if (e) { e.stopPropagation(); e.preventDefault(); }
+      if (phase === 'gap' && steps < maxSteps && dist < goal) { steps += 1; dist += 1; render(); box.classList.remove('step'); void box.offsetWidth; box.classList.add('step'); }
+      holding = true;
+    };
+    const up = () => { holding = false; };
+    box.onpointerdown = down;
+    box.onpointerup = up;
+    box.onpointercancel = up;
+    box.onpointerleave = up;
+    const kd = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) down(); } };
+    const ku = (e) => { if (e.key === ' ' || e.key === 'Enter') up(); };
+    window.addEventListener('keydown', kd);
+    window.addEventListener('keyup', ku);
+    render();
+    for (let cycle = 0; cycle < 8 && dist < goal; cycle++) {
+      // the police push: keep holding until the push is over
+      phase = 'push';
+      banner.textContent = '경찰이 밀어붙인다! 화면을 꾹 누르고 버텨!';
+      banner.className = 'fm-banner push';
+      police.classList.add('push');
+      box.classList.add('shake');
+      holdBar.hidden = false;
+      const dur = 1600 + Math.random() * 800;
+      let held = 0;
+      const t0 = performance.now();
+      await new Promise((res) => {
+        let last = t0;
+        const loop = (now) => {
+          if (holding) held += now - last;
+          last = now;
+          $('fmHoldFill').style.width = Math.min(100, (100 * held) / (dur * need)) + '%';
+          if (now - t0 >= dur) { res(); return; }
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      });
+      box.classList.remove('shake');
+      police.classList.remove('push');
+      holdBar.hidden = true;
+      if (held >= dur * need) {
+        msg.textContent = '팔짱을 끼고 버텼다!';
+        $('fmChant').textContent = c.items[chantI % c.items.length] || '';
+        chantI += 1;
+      } else {
+        pushedBack += 1;
+        dist = Math.max(0, dist - 1);
+        msg.textContent = '대열이 밀렸다… 다시 팔짱을 껴!';
+      }
+      render();
+      // a gap opens: tap to move forward
+      phase = 'gap';
+      steps = 0;
+      holding = false;
+      banner.textContent = `틈이 생겼다! 화면을 눌러 앞으로! (최대 ${maxSteps}걸음)`;
+      banner.className = 'fm-banner gap';
+      await sleep(1700);
+      phase = 'rest';
+      banner.textContent = '';
+      banner.className = 'fm-banner';
+      await sleep(500);
+    }
+    box.onpointerdown = box.onpointerup = box.onpointercancel = box.onpointerleave = null;
+    window.removeEventListener('keydown', kd);
+    window.removeEventListener('keyup', ku);
+    const reached = dist >= goal;
+    const grade = reached ? (pushedBack === 0 ? 'S' : pushedBack <= 1 ? 'A' : 'B') : dist >= 8 ? 'B' : 'C';
+    S.vars.대열도착 = reached ? 1 : 0;
+    recordGrade('대열', grade);
+    $('fmChant').textContent = '대한 독립 만세!';
+    msg.textContent = (reached ? '형무소 담 앞까지 나아갔다! 갇힌 친구들에게 함성이 닿았다' : '경찰 저지선에 막혔다. 그래도 함성은 형무소 담을 넘었다') + ` · 등급 ${grade} · 화면을 눌러 계속`;
+    await sleep(600);
+    await waitBoxTap(box);
+    box.hidden = true;
+  }
+
   /* ---------- finale: the five broken beliefs gather into one new card ---------- */
   async function hopeCard() {
     $('dialog').hidden = true;
@@ -2582,6 +2897,9 @@
       case 'rhythm': return rhythmGame(c);
       case 'hub': return hub(c.arg, id);
       case 'hopecard': return hopeCard();
+      case 'mimeo': return mimeoGame(c);
+      case 'signal': return signalGame();
+      case 'formation': return formationGame(c);
       case 'gradevar': {
         const [game, k, cuts] = c.arg.split('|').map((x) => x.trim());
         const [a, b2, d] = (cuts || '3 2 1').split(/\s+/).map(Number);
@@ -2732,6 +3050,8 @@
       'assets/minigame/mg_timer.webp', 'assets/minigame/mg_sack.webp', 'assets/minigame/mg_jige.webp',
       'assets/minigame/mg_measure.webp', 'assets/minigame/mg_ricebundle.webp',
       'assets/minigame/mg_abacus.webp', 'assets/minigame/mg_crowd.webp', 'assets/card/card_hope.webp', PERK_ICON,
+      'assets/minigame/mg_mimeo.webp', 'assets/minigame/mg_roller.webp', 'assets/minigame/mg_bell.webp',
+      'assets/minigame/mg_footsteps.webp', 'assets/minigame/mg_police_line.webp', 'assets/bg/bg_school_wall.webp',
     ];
     await preload(list, (p) => {
       $('ldFill').style.width = Math.round(p * 100) + '%';

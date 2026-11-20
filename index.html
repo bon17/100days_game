@@ -232,6 +232,83 @@
     <p class="tap-hint">화면을 눌러 계속</p>
   </div>
 
+  <!-- episode 6: mimeograph printing -->
+  <div class="overlay mimeo" id="mimeo" hidden>
+    <img class="mg-bg mm-bg" src="assets/bg/bg_reading_room.webp" alt="">
+    <div class="ch-head"><b>등사판 인쇄</b><span id="mmInfo"></span></div>
+    <div class="mm-stage" id="mmStage">
+      <img class="mm-frame" src="assets/minigame/mg_mimeo.webp" alt="">
+      <div class="mm-sheet" id="mmSheet"><p class="mm-text" id="mmText"></p></div>
+      <img class="mm-roller" id="mmRoller" src="assets/minigame/mg_roller.webp" alt="">
+    </div>
+    <div class="mm-meter" id="mmMeter" hidden><span>너무 빠름</span><i class="mm-ok"></i><span>너무 느림</span><b id="mmMark"></b></div>
+    <div class="mm-warn" id="mmWarn" hidden>
+      <img src="assets/minigame/mg_footsteps.webp" alt="">
+      <b>발소리! 저벅저벅…</b>
+      <span>등잔불을 끄고 격문을 숨겨라!</span>
+      <button class="btn" id="btnMmHide" type="button">불 끄고 숨기기</button>
+      <div class="mm-warn-time"><span id="mmWarnTime"></span></div>
+    </div>
+    <p class="ch-msg ms-msg" id="mmMsg"></p>
+    <div class="ins-brief" id="mmBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 등사판 인쇄</p>
+          <h2 class="note-title">밤새 격문을 찍어라</h2>
+          <p class="fi-text">책방 뒷방의 등사판으로 격문을 찍는다. 실제로 학생들은 격문을 수천 장씩 찍어 11월 12일에 뿌렸다.</p>
+          <ol class="brief-steps"><li>롤러를 등사판 <b>왼쪽 끝에서 오른쪽 끝까지</b> 한 번에 쭉 끌어 민다 (손가락이나 마우스)</li><li>너무 빠르면 글씨가 흐리고, 너무 느리면 잉크가 번진다. 알맞은 속도면 한 번에 200장!</li><li>화면에 <b>발자국</b>이 뜨면 바로 <b>불 끄고 숨기기</b>를 누른다. 눈치가 높으면 시간이 늘어난다</li></ol>
+          <button class="btn fi-go" id="btnMmStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- episode 6: wait outside the school wall for the class bell -->
+  <div class="overlay signal" id="signal" hidden data-cop="away">
+    <img class="mg-bg" src="assets/bg/bg_school_wall.webp" alt="">
+    <div class="ch-head"><b>담장 밖 신호</b><span id="sgInfo"></span></div>
+    <img class="sg-cop" id="sgCop" src="assets/char/char_constable_normal.webp" alt="">
+    <div class="sg-look" id="sgLook"><img src="assets/ui/icon_eye.webp" alt=""><b id="sgLookText"></b></div>
+    <div class="sg-track"><span id="sgFill"></span><i>담장 아래</i></div>
+    <div class="sg-bell" id="sgBell" hidden><img src="assets/minigame/mg_bell.webp" alt=""><b>땡땡땡! 수업 시작 — 지금이다!</b></div>
+    <p class="ch-msg ms-msg" id="sgMsg"></p>
+    <div class="ins-brief" id="sgBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 담장 밖 신호</p>
+          <h2 class="note-title">수업 종이 울리는 순간을 기다려라</h2>
+          <p class="fi-text">11월 12일 아침. 실제로 학생들은 수업이 시작되자마자 한꺼번에 교실을 뛰쳐나왔다. 윤재는 담장 밖에서 격문을 들고 신호를 기다린다.</p>
+          <ol class="brief-steps"><li>위쪽 표시가 <b>순사가 등을 돌렸다</b>일 때 화면을 눌러 담장 아래로 다가간다</li><li><b>순사가 보고 있다</b>(빨간 눈)일 때 누르면 들킬 뻔한다. 노란 표시가 뜨면 곧 돌아본다는 뜻</li><li>담장 아래에 도착하면 기다렸다가, 화면에 <b>종</b>이 뜨는 순간 누른다</li></ol>
+          <button class="btn fi-go" id="btnSgStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- episode 6: hold the line in front of the prison -->
+  <div class="overlay formation" id="formation" hidden>
+    <img class="mg-bg" src="assets/bg/bg_street_march.webp" alt="">
+    <img class="fm-police" id="fmPolice" src="assets/minigame/mg_police_line.webp" alt="">
+    <div class="ch-head"><b>형무소 앞 대열</b><span id="fmInfo"></span></div>
+    <div class="fm-road"><span id="fmFill"></span><i>광주 형무소</i></div>
+    <p class="fm-banner" id="fmBanner"></p>
+    <p class="fm-chant" id="fmChant"></p>
+    <div class="fm-hold" id="fmHold" hidden><span id="fmHoldFill"></span></div>
+    <div class="fm-row" id="fmRow"></div>
+    <p class="ch-msg ms-msg" id="fmMsg"></p>
+    <div class="ins-brief" id="fmBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 형무소 앞 대열</p>
+          <h2 class="note-title">팔짱을 끼고 끝까지 나아가라</h2>
+          <p class="fi-text" id="fmBriefText"></p>
+          <ol class="brief-steps"><li>빨간 글씨 <b>경찰이 밀어붙인다!</b>가 뜨면 화면을 <b>꾹 누르고</b> 막대가 찰 때까지 버틴다</li><li>초록 글씨 <b>틈이 생겼다!</b>가 뜨면 화면을 <b>여러 번 눌러</b> 앞으로 나아간다</li><li>버틸 때마다 실제 격문의 구호가 화면에 뜬다. PC는 스페이스바를 누르고 있어도 된다</li></ol>
+          <button class="btn fi-go" id="btnFmStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
   <div class="choices" id="choices" hidden></div>
   <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>
