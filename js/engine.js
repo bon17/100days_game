@@ -733,7 +733,8 @@
   }
 
   // shared modal for history notes and new perks
-  async function modal({ kicker, title, text, img, icon, saved }) {
+  // minRead: milliseconds the popup stays before it can be closed (history notes: 5 s, so students read them)
+  async function modal({ kicker, title, text, img, icon, saved, minRead = 0 }) {
     $('dialog').hidden = true;
     hideTip();
     hidePops();
@@ -746,7 +747,27 @@
     $('nsText').textContent = text;
     $('nsSaved').textContent = saved || '';
     $('noteshow').hidden = false;
-    await sleep(500);
+    const hint = $('nsHint');
+    const bar = $('nsRead');
+    if (minRead > 0) {
+      hint.classList.add('wait');
+      bar.hidden = false;
+      const t0 = performance.now();
+      await new Promise((res) => {
+        const tick = () => {
+          const left = Math.max(0, minRead - (performance.now() - t0));
+          bar.firstElementChild.style.width = 100 * (1 - left / minRead) + '%';
+          hint.textContent = left > 0 ? `천천히 읽어 보세요 · ${Math.ceil(left / 1000)}초 뒤에 넘길 수 있어요` : '화면을 눌러 계속';
+          if (left > 0) setTimeout(tick, 100); else res();
+        };
+        tick();
+      });
+      hint.classList.remove('wait');
+      bar.hidden = true;
+    } else {
+      hint.textContent = '화면을 눌러 계속';
+      await sleep(500);
+    }
     await waitTap();
     $('noteshow').hidden = true;
     hud(['가방']);
@@ -758,7 +779,7 @@
     const note = { title, img: BG[bgKey] || '', text: rest.join(' | ') };
     S.notes.push(note);
     if (quiet) return;
-    await modal({ kicker: '알고 가기', title, text: note.text, img: note.img, saved: '역사 노트에 저장했어요. 위쪽 ‘가방’에서 다시 볼 수 있어요.' });
+    await modal({ kicker: '알고 가기', title, text: note.text, img: note.img, saved: '역사 노트에 저장했어요. 위쪽 ‘가방’에서 다시 볼 수 있어요.', minRead: 5000 });
   }
   async function perkEvent(arg, quiet) {
     const [name, ...rest] = arg.split('|').map((x) => x.trim());
