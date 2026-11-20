@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./card_hopeless_broken.png in the current directory. Portrait (vertical, card shape 2:3) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Recreate the attached card exactly (same frame, same illustration, same colors), but now it has shattered: split into five or six jagged pieces with visible gaps, slightly drifting apart, small shards falling, and through the gaps a thin warm light shines from behind. Dramatic but clean. Background around the card: fully transparent if possible; otherwise perfectly flat solid pure green (#00FF00).

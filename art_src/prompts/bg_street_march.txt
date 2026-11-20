@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./bg_street_march.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Game background: a main street of Gwangju on 3 November 1929, seen from behind a huge crowd of Korean students in black school uniforms and caps and girls in white jeogori, marching forward together with fists and hands raised, shouting. Two-story colonial-era buildings on both sides, autumn trees, dust in the air, late morning light. No banners with text, no signs with text. Hopeful, powerful mood. Keep the center open.

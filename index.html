@@ -186,6 +186,52 @@
     </div>
   </div>
 
+  <!-- episodes 5-6: pick whom to meet / which witness to ask -->
+  <div class="overlay hub" id="hub" hidden>
+    <div class="note-panel hub-panel">
+      <div class="note-body">
+        <p class="note-kicker" id="hbLeft"></p>
+        <h2 class="note-title" id="hbTitle"></h2>
+        <p class="fi-text" id="hbText"></p>
+        <div class="hb-grid" id="hbGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- episodes 5-6: rhythm game (reading the speech / chanting slogans) -->
+  <div class="overlay rhythm" id="rhythm" hidden>
+    <img class="mg-bg" id="rhBg" alt="">
+    <div class="rh-crowd" id="rhCrowd"></div>
+    <div class="ch-head"><b id="rhTitle">구호</b><span id="rhInfo"></span></div>
+    <p class="rh-phrase" id="rhPhrase"></p>
+    <div class="rh-lane" id="rhLane"><div class="rh-hit"></div></div>
+    <figure class="rh-mem" id="rhMem" hidden><img id="rhMemImg" alt=""></figure>
+    <p class="ch-msg ms-msg" id="rhMsg"></p>
+    <div class="ins-brief" id="rhBrief" hidden>
+      <div class="note-panel brief-panel">
+        <div class="note-body">
+          <p class="note-kicker">미니게임 · 리듬</p>
+          <h2 class="note-title" id="rhBriefTitle"></h2>
+          <p class="fi-text" id="rhBriefText"></p>
+          <ol class="brief-steps">
+            <li>오른쪽에서 낱말이 하나씩 날아온다</li>
+            <li>낱말이 왼쪽 <b>동그라미</b>에 겹칠 때 화면을 누른다 (PC는 스페이스바)</li>
+            <li>딱 맞으면 '좋아!', 조금 어긋나도 '괜찮아'. 놓쳐도 끝까지 이어진다</li>
+          </ol>
+          <button class="btn fi-go" id="btnRhStart" type="button">시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- finale: the broken beliefs gather into one new card -->
+  <div class="overlay hope" id="hope" hidden>
+    <div class="hp-row" id="hpRow"></div>
+    <img class="hp-card" id="hpCard" src="assets/card/card_hope.webp" alt="" hidden>
+    <p class="hp-text" id="hpText"></p>
+    <p class="tap-hint">화면을 눌러 계속</p>
+  </div>
+
   <div class="cardping" id="cardping" hidden><img id="cpImg" alt=""><span id="cpText"></span></div>
   <div class="choices" id="choices" hidden></div>
   <div class="tip" id="tip" hidden><b id="tipTerm"></b><span id="tipText"></span></div>
@@ -421,7 +467,7 @@
       </div>
       <div class="chapter-list" id="chapterList" hidden></div>
     </div>
-    <p class="title-ep">프로토타입 · 1화 ~ 4화</p>
+    <p class="title-ep">1화 ~ 6화</p>
   </div>
 
   <div class="overlay loading" id="loading">
@@ -447,6 +493,8 @@
 <script src="story/stage2.js"></script>
 <script src="story/stage3.js"></script>
 <script src="story/stage4.js"></script>
+<script src="story/stage5.js"></script>
+<script src="story/stage6.js"></script>
 <script src="js/engine.js"></script>
 </body>
 </html>

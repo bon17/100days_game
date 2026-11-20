@@ -34,8 +34,17 @@
     은행: 'assets/bg/bg_bank.webp',
     빨간펜: 'assets/bg/cg_redpen.webp',
     진수작별: 'assets/bg/cg_jinsu_leave.webp',
+    나주역: 'assets/bg/cg_naju.webp',
+    신문사: 'assets/bg/bg_newsroom.webp',
+    검열: 'assets/bg/cg_censor.webp',
+    거리행진: 'assets/bg/bg_street_march.webp',
+    단상: 'assets/bg/cg_stage_silent.webp',
+    독서회: 'assets/bg/bg_reading_room.webp',
+    감옥: 'assets/bg/cg_prison.webp',
+    광복: 'assets/bg/cg_liberation.webp',
+    함께행진: 'assets/bg/cg_march_friends.webp',
   };
-  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형', 감독: '동척 감독 오카다', 계장: '은행 계장 야마시타' };
+  const NAME_LABEL = { 교관: '마쓰다 교관', 형사: '사토 형사', 진수: '진수 형', 감독: '동척 감독 오카다', 계장: '은행 계장 야마시타', 순사: '일본인 순사' };
   const MEMORY_CAPTION = {
     아버지기억: '새벽 논에서 허리 한 번 못 펴는 아버지',
     어머니기억: '밤새 남의 옷을 기우는 어머니',
@@ -54,6 +63,7 @@
     아버지: { key: 'father', scale: 1.02, faces: { 기본: 'normal', 슬픔: 'sad' } },
     감독: { key: 'overseer', scale: 1.04, faces: { 기본: 'normal', 엄격: 'stern' } },
     계장: { key: 'banker', scale: 1.04, faces: { 기본: 'normal' } },
+    순사: { key: 'constable', scale: 1.04, faces: { 기본: 'normal' } },
   };
   const POS = { 왼쪽: 24, 가운데: 50, 오른쪽: 76 };
   const STATS = {
@@ -75,7 +85,7 @@
     { id: 'safe', name: '안전', label: '가만히 있으면 안전해', truth: '가만히 있어도 안전하지 않았다. 감시는 아무나 노렸다.', states: ['normal', 'cracked', 'broken'] },
     { id: 'home', name: '집', label: '우리 집 먹고사는 게 먼저야', truth: '먹고사는 일과 나라 일은 따로가 아니었다. 나라를 빼앗긴 땅에서는 먹고사는 것부터 빼앗긴다.', states: ['normal', 'cracked', 'broken'] },
     { id: 'escape', name: '탈출', label: '나 하나만 빠져나가면 돼', truth: '나 하나 빠져나가는 길은 없었다. 그 문을 지나려면 내 입으로 우리를 지워야 했다.', states: ['normal', 'cracked', 'broken'] },
-    { id: 'hopeless', name: '원래', label: '태어나 보니 원래 이랬어', truth: '원래 그런 세상은 없었다. 누군가 빼앗은 것이다.', states: ['normal'] },
+    { id: 'hopeless', name: '원래', label: '태어나 보니 원래 이랬어', truth: '원래 그런 세상은 없었다. 누군가 빼앗은 것이다.', states: ['normal', 'cracked', 'broken'] },
   ];
   const CARD_STATE = { 기본: 'normal', 실금: 'hairline', 금감: 'cracked', 깨짐: 'broken' };
   const CARD_STATE_TEXT = { hairline: '윤재의 믿음에 처음으로 실금이 갔다.', cracked: '윤재의 믿음에 금이 크게 갔다.' };
@@ -85,6 +95,7 @@
   const TITLES = { 학업: '책벌레', 눈치: '매의 눈', 체력: '황소', 용기: '불씨' };
   const TIMES = ['오전', '오후', '저녁'];
   const SAVE_KEY = 'colony15-save-v1';
+  const ddayText = (n) => (n > 0 ? `D-${n}` : n === 0 ? 'D-DAY' : `D+${-n}`);
   const cardSrc = (id, st) => `assets/card/card_${id}${st === 'normal' ? '' : '_' + st}.webp`;
   const charSrc = (key, face) => `assets/char/char_${key}_${face}.webp`;
 
@@ -154,12 +165,25 @@
           cmds.push({ type: 'interrogate', qs });
           continue;
         }
-        if (name === 'rebut') {
+        if (name === 'rhythm') {
+          // @rhythm 게임이름 | 모드(연설/구호) | 배경
+          // T 구절(띄어 쓴 마디마다 한 박) | 기억 그림 | stop
+          const lines2 = [];
+          while (++i < lines.length && lines[i].trim() !== '@endrhythm') {
+            const l = lines[i].trim();
+            if (!l.startsWith('T ')) continue;
+            const [text, img, flag] = l.slice(2).split('|').map((x) => x.trim());
+            lines2.push({ text, img: img || '', stop: flag === 'stop' });
+          }
+          cmds.push({ type: 'rhythm', game: parts[0], mode: parts[1] || '구호', bg: parts[2] || '', lines: lines2 });
+          continue;
+        }
+        if (name === 'rebut' || name === 'manifesto') {
           // M id | 이름 | 배경 그림 | 설명      (memory card)
           // L 문장 | 정답 id (띄어 쓰면 그중 하나, '+'로 이으면 모두) | 해설
           const mems = [];
           const sents = [];
-          while (++i < lines.length && lines[i].trim() !== '@endrebut') {
+          while (++i < lines.length && !['@endrebut', '@endmanifesto'].includes(lines[i].trim())) {
             const l = lines[i].trim();
             const [a, b, c2, d] = l.slice(2).split('|').map((x) => x.trim());
             if (l.startsWith('M ')) mems.push({ id: a, name: b || a, img: c2 || '', desc: d || '' });
@@ -168,7 +192,7 @@
               sents.push({ text: a, ok: (b || '').split(all ? '+' : /\s+/).map((x) => x.trim()).filter(Boolean), all, why: c2 || '' });
             }
           }
-          cmds.push({ type: 'rebut', title: arg, mems, sents });
+          cmds.push({ type: name, title: arg, mems, sents });
           continue;
         }
         if (name === 'exam') {
@@ -412,7 +436,7 @@
     $('moneyVal').textContent = S.vars.돈;
     $('riceVal').textContent = Math.max(0, S.vars.쌀 || 0);
     renderGoal();
-    $('ddayNum').textContent = 'D-' + S.day;
+    $('ddayNum').textContent = ddayText(S.day);
     $('ddayTime').textContent = S.time || '';
     const el = changed === '성적' ? $('gGrade') : changed === '의심' ? $('gSusp') : null;
     if (el) { el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
@@ -615,7 +639,7 @@
   async function dayCard(arg) {
     const [n, date, place] = arg.split('|').map((x) => x.trim());
     const showNum = n && n !== '-';
-    if (showNum) { S.day = Number(n); $('dcNum').textContent = 'D-' + n; }
+    if (showNum) { S.day = Number(n); $('dcNum').textContent = ddayText(S.day); }
     S.time = '';
     renderTop();
     $('dcNum').hidden = !showNum;
@@ -991,7 +1015,7 @@
 
   // popup before the map: how many moves today, where you can go, and today's note
   function freeIntro(names, times, extra) {
-    $('fiKicker').textContent = `자유 시간 · D-${S.day}`;
+    $('fiKicker').textContent = `자유 시간 · ${ddayText(S.day)}`;
     $('fiTitle').textContent = `오늘은 ${times.length}번 움직일 수 있어요`;
     $('fiText').textContent = `${times.join(', ')}에 지도에서 갈 곳을 하나씩 골라요. 어디에 시간을 쓰느냐에 따라 능력치, 돈, 친구와의 사이가 달라져요.`;
     const g = S.goal;
@@ -1411,10 +1435,18 @@
     while (q.length) { const a = q.shift(); ALLEY[a].l.forEach((b) => { if (d[b] === Infinity) { d[b] = d[a] + 1; q.push(b); } }); }
     return d;
   }
-  async function chaseGame() {
+  async function chaseGame(arg) {
     $('dialog').hidden = true;
     hideTip();
     const box = $('chase');
+    // '@chase 밤': carry leaflets to the reading room at night (same map, different words)
+    const night = (arg || '').trim() === '밤';
+    const T = night
+      ? { head: '격문을 지켜라', brief: '격문을 품고 독서회 뒷문까지', goal: '독서회 뒷문', ok: '독서회 뒷문 안으로 미끄러져 들어갔다!', ng: '형사에게 붙잡혔다… 격문 몇 장을 빼앗겼다' }
+      : { head: '형사를 따돌려라', brief: '집 대문까지 도망쳐라', goal: '집 대문', ok: '집 대문 안으로 뛰어들었다!', ng: '어깨를 붙잡혔다…' };
+    box.classList.toggle('night', night);
+    box.querySelector('.ch-head b').textContent = T.head;
+    $('chBrief').querySelector('.note-title').textContent = T.brief;
     const nodesEl = $('chNodes');
     const tools = $('chTools');
     const msg = $('chMsg');
@@ -1450,7 +1482,7 @@
         b.className = 'ch-node' + (can.has(i) ? ' can' : '') + (nd.goal ? ' goal' : '') + (nd.hide ? ' hide' : '') + (nd.dead && seeDead ? ' dead' : '');
         b.style.left = nd.x + '%';
         b.style.top = nd.y + '%';
-        const label = nd.goal ? '집 대문' : nd.hide ? nd.hide : nd.dead && seeDead ? '막다른 길' : '';
+        const label = nd.goal ? T.goal : nd.hide ? nd.hide : nd.dead && seeDead ? '막다른 길' : '';
         if (label) { const s = document.createElement('span'); s.textContent = label; b.appendChild(s); }
         b.addEventListener('click', (e) => { e.stopPropagation(); if (can.has(i) && pickRes) { const r = pickRes; pickRes = null; r({ go: i }); } });
         nodesEl.appendChild(b);
@@ -1538,7 +1570,7 @@
     box.classList.remove('danger');
     tools.textContent = '';
     S.vars.추격성공 = result === 'escape' ? 1 : 0;
-    msg.textContent = (result === 'escape' ? '집 대문 안으로 뛰어들었다!' : '어깨를 붙잡혔다…') + ' · 화면을 눌러 계속';
+    msg.textContent = (result === 'escape' ? T.ok : T.ng) + ' · 화면을 눌러 계속';
     if (result === 'caught') { $('stage').classList.add('shake'); setTimeout(() => $('stage').classList.remove('shake'), 450); }
     await new Promise((res) => { box.onclick = (e) => { e.stopPropagation(); box.onclick = null; res(); }; });
     box.hidden = true;
@@ -2008,10 +2040,31 @@
   }
 
   /* ---------- episode 4 mini-game: rebut the speech with Yunjae's own memories ---------- */
-  async function rebutGame(c) {
+  async function rebutGame(c, mode) {
+    const mf = mode === 'manifesto';   // fill the blank (___) of each slogan with the right card
     $('dialog').hidden = true;
     hideTip();
     const box = $('rebut');
+    box.querySelector('.ch-head b').textContent = mf ? '격문 쓰기' : '연설문 속 거짓 찾기';
+    box.querySelector('.rb-kicker').textContent = mf ? '독서회 격문 · 빈칸을 채워라' : '마쓰다 교관이 써 준 연설문';
+    box.querySelector('.rb-ev-kicker').textContent = mf ? '윤재가 겪은 일 · 이 말을 쓰는 이유' : '윤재가 직접 겪은 일 · 증거';
+    box.classList.toggle('mf', mf);
+    const bk = $('rbBrief');
+    bk.querySelector('.note-kicker').textContent = mf ? '미니게임 · 격문 쓰기' : '미니게임 · 연설문 속 거짓 찾기';
+    bk.querySelector('.note-title').textContent = mf ? '내가 겪은 일로 격문을 써라' : '내가 겪은 일로 뒤집어라';
+    bk.querySelector('.fi-text').textContent = mf
+      ? '11월 12일에 돌릴 격문. 빈칸마다 윤재가 직접 겪은 일에서 나온 말을 채워 넣는다.'
+      : '마쓰다 교관이 써 준 연설문. 문장마다 윤재가 직접 겪은 일과 맞지 않는 곳이 있다.';
+    const steps = bk.querySelectorAll('.brief-steps li');
+    if (mf) {
+      steps[0].innerHTML = '가운데 격문에서 <b>노랗게 표시된 문장</b>의 빈칸을 채운다. 순서는 매번 섞인다';
+      steps[1].innerHTML = '아래 <b>낱말 카드</b> 중에서 빈칸에 맞는 말을 고른다. 일본이 좋아할 말도 섞여 있다';
+      steps[2].innerHTML = '한 번에 맞히면 ★, 두 번 틀리면 맞는 카드가 빛난다';
+    } else {
+      steps[0].innerHTML = '가운데 연설문에서 <b>노랗게 표시된 문장</b>을 따진다. 문장과 카드 순서는 매번 섞인다';
+      steps[1].innerHTML = '아래 <b>기억 카드</b> 중에서 그 문장을 뒤집을 증거를 고른다. 진짜 기억이지만 증거가 아닌 카드도 있다';
+      steps[2].innerHTML = '카드가 <b>두 장</b> 필요한 문장도 있다. 한 번에 맞히면 ★, 두 번 틀리면 맞는 카드가 빛난다';
+    }
     const hand = $('rbHand');
     const list = $('rbList');
     const res = $('rbRes');
@@ -2034,7 +2087,7 @@
     // the whole speech stays on the page; the sentence being checked is highlighted
     const lis = sents.map((sent) => {
       const li = document.createElement('li');
-      li.innerHTML = `<span>${sent.text}</span>`;
+      li.innerHTML = `<span>${mf ? sent.text.replace('___', '<u>　　　</u>') : sent.text}</span>`;
       list.appendChild(li);
       return li;
     });
@@ -2058,7 +2111,8 @@
       const need = sent.all ? sent.ok.length : 1;
       let misses = 0;
       res.className = 'rb-res';
-      res.textContent = need > 1 ? `이 문장은 증거가 ${need}장 필요해요. 기억 카드를 ${need}장 고르세요.` : '이 문장을 뒤집을 윤재의 기억을 아래에서 고르세요.';
+      res.textContent = mf ? '빈칸에 들어갈 말을 아래 낱말 카드에서 고르세요.'
+        : need > 1 ? `이 문장은 증거가 ${need}장 필요해요. 기억 카드를 ${need}장 고르세요.` : '이 문장을 뒤집을 윤재의 기억을 아래에서 고르세요.';
       while (picked.size < need) {
         const k = await new Promise((r) => cards.forEach((b2, j) => { b2.onclick = (e) => { e.stopPropagation(); r(j); }; }));
         cards.forEach((b2) => { b2.onclick = null; });
@@ -2075,7 +2129,7 @@
         cards[k].classList.remove('wrong'); void cards[k].offsetWidth; cards[k].classList.add('wrong');
         res.textContent = misses >= 2
           ? '그 기억으로는 이 문장을 뒤집기 어려워요. 빛나는 카드가 힌트예요.'
-          : '그 기억은 이 문장을 뒤집는 증거가 아니에요. 다시 골라 보세요.';
+          : mf ? '그 말은 이 빈칸에 어울리지 않아요. 다시 골라 보세요.' : '그 기억은 이 문장을 뒤집는 증거가 아니에요. 다시 골라 보세요.';
         if (misses >= 2) mems.forEach((m, j) => { if (sent.ok.includes(m.id) && !picked.has(m.id)) cards[j].classList.add('hint'); });
       }
       if (!misses) first += 1;
@@ -2091,19 +2145,218 @@
       ev.hidden = true;
       li.classList.remove('cur');
       li.classList.add('done');
-      li.insertAdjacentHTML('beforeend', '<img class="rb-x" alt="거짓" src="assets/minigame/mg_stamp_x.webp">');
+      if (mf) {
+        li.querySelector('span').textContent = sent.text.replace('___', mems.filter((m) => picked.has(m.id)).map((m) => m.name).join(' '));
+        li.insertAdjacentHTML('beforeend', '<img class="rb-x" alt="완성" src="assets/minigame/mg_stamp_o.webp">');
+      } else {
+        li.insertAdjacentHTML('beforeend', '<img class="rb-x" alt="거짓" src="assets/minigame/mg_stamp_x.webp">');
+      }
       await sleep(250);
     }
     cards.forEach((b2) => b2.classList.remove('hint', 'wrong', 'picked'));
     const n = sents.length;
     const grade = first >= n ? 'S' : first >= n - 2 ? 'A' : first >= Math.ceil(n / 3) ? 'B' : 'C';
-    S.vars.거짓찾기 = first;
-    recordGrade('거짓찾기', grade);
+    S.vars[mf ? '격문쓰기' : '거짓찾기'] = first;
+    recordGrade(mf ? '격문쓰기' : '거짓찾기', grade);
     res.className = 'rb-res ok';
-    res.textContent = `연설문 ${n}문장을 모두 뒤집었다 · 한 번에 맞힌 문장 ${first}개 · 등급 ${grade}`;
+    res.textContent = mf ? `격문 ${n}줄을 모두 완성했다 · 한 번에 맞힌 줄 ${first}개 · 등급 ${grade}`
+      : `연설문 ${n}문장을 모두 뒤집었다 · 한 번에 맞힌 문장 ${first}개 · 등급 ${grade}`;
     $('rbTap').hidden = false;
     await waitBoxTap(box);
     $('rbTap').hidden = true;
+    box.hidden = true;
+  }
+
+  /* ---------- people hub: pick whom to meet (free time in episodes 5-6, witnesses) ---------- */
+  // @hub 횟수 | 라벨 접두어 | 이름:그림 이름:그림 ... | 제목 | 안내   → runs '## 접두어:이름' until @return
+  async function hub(arg, id) {
+    const parts = arg.split('|').map((x) => x.trim());
+    const count = Number(parts[0]) || 1;
+    const prefix = parts[1] || '사람';
+    const people = (parts[2] || '').split(/\s+/).filter(Boolean).map((t) => { const [n, img] = t.split(':'); return { n, img: img || n }; });
+    hideSprite('모두');
+    $('dialog').hidden = true;
+    hideTip();
+    const met = new Set();
+    for (let i = 0; i < count; i++) {
+      $('hbTitle').textContent = parts[3] || '누구를 만날까?';
+      $('hbText').textContent = parts[4] || '';
+      $('hbLeft').textContent = `남은 횟수 ${count - i}`;
+      const grid = $('hbGrid');
+      grid.textContent = '';
+      const n = await new Promise((res) => {
+        people.forEach((pp) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'rb-card hb-card' + (met.has(pp.n) ? ' met' : '');
+          const src = CHARS[pp.img] ? charSrc(CHARS[pp.img].key, 'normal') : BG[pp.img] || '';
+          const rel = RELS[pp.n] ? Math.max(0, Math.min(5, S.vars[pp.n] || 0)) : -1;
+          b.innerHTML = `<img class="${CHARS[pp.img] ? 'face' : ''}" alt="" src="${src}"><b>${(RELS[pp.n] || {}).name || pp.n}</b>`
+            + (rel >= 0 ? `<small class="hearts">${'♥'.repeat(rel)}${'♡'.repeat(5 - rel)}</small>` : '')
+            + (met.has(pp.n) ? '<small>이미 만났어요</small>' : '');
+          b.disabled = met.has(pp.n);
+          b.addEventListener('click', (e) => { e.stopPropagation(); res(pp.n); });
+          grid.appendChild(b);
+        });
+        $('hub').hidden = false;
+      });
+      $('hub').hidden = true;
+      met.add(n);
+      const label = `${prefix}:${n}`;
+      if (label in prog.labels) await runSub(prog.labels[label], id);
+      hideSprite('모두');
+      $('dialog').hidden = true;
+      if (id !== runId) return;
+    }
+  }
+
+  /* ---------- rhythm game: read the speech (강당) or chant the slogans (거리) ---------- */
+  async function rhythmGame(c) {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const speech = c.mode === '연설';
+    const box = $('rhythm');
+    const lane = $('rhLane');
+    const phraseEl = $('rhPhrase');
+    const msg = $('rhMsg');
+    const mem = $('rhMem');
+    $('rhBg').src = BG[c.bg] || BG[speech ? '강당' : '거리행진'] || '';
+    box.classList.toggle('speech', speech);
+    $('rhTitle').textContent = speech ? '연설' : '구호';
+    lane.querySelectorAll('.rh-note').forEach((x) => x.remove());
+    phraseEl.textContent = '';
+    msg.textContent = '';
+    mem.hidden = true;
+    // crowd rows: 1 + comrades (episode 6) or friends with 3+ hearts (episode 5)
+    const crowdLv = speech ? 0 : Math.max(1, Math.min(5, 1 + (S.vars.동료 || 0)));
+    const crowd = $('rhCrowd');
+    crowd.innerHTML = '';
+    for (let k = 0; k < crowdLv; k++) crowd.insertAdjacentHTML('beforeend', `<img alt="" src="assets/minigame/mg_crowd.webp" style="--k:${k}">`);
+    $('rhBriefTitle').textContent = speech ? '마쓰다의 연설문을 읽어라' : '함께 구호를 외쳐라';
+    $('rhBriefText').textContent = speech
+      ? '수여식 단상. 마쓰다 교관이 써 준 연설문을 한 마디씩 읽는다.'
+      : `거리의 학생들과 함께 구호를 외친다. 함께하는 사람이 많을수록 대열이 커진다. (지금 대열 ${crowdLv}줄)`;
+    box.hidden = false;
+    $('rhInfo').textContent = '';
+    await briefing('rhBrief', 'btnRhStart');
+    // build the beat chart: one beat per space-separated chunk
+    const beat = speech ? 900 : 760;
+    const travel = 2300;
+    const notes = [];
+    let t = 1600;
+    c.lines.forEach((ln, li) => {
+      const words = ln.text.split(/\s+/).filter(Boolean);
+      words.forEach((w, wi) => {
+        notes.push({ t, w, li, wi, last: wi === words.length - 1, stop: ln.stop && wi === words.length - 1 });
+        t += beat;
+      });
+      t += beat * 0.8;
+    });
+    const hitX = 18;     // % from the left where notes should be hit
+    notes.forEach((nt) => {
+      const el = document.createElement('div');
+      el.className = 'rh-note';
+      el.textContent = nt.w;
+      el.style.left = '110%';
+      lane.appendChild(el);
+      nt.el = el;
+    });
+    let score = 0;
+    let hits = 0;
+    let streak = 0;
+    let lineShown = -1;
+    let stopped = false;
+    const judge = (nt, dt) => {
+      const a = Math.abs(dt);
+      const pts = a <= 160 ? 2 : a <= 320 ? 1 : 0;
+      nt.done = true;
+      nt.el.classList.add(pts === 2 ? 'perfect' : pts ? 'good' : 'miss');
+      score += pts;
+      if (pts) { hits += 1; streak += 1; } else streak = 0;
+      msg.textContent = pts === 2 ? '좋아!' : pts ? '괜찮아' : speech ? '…목소리가 떨린다' : '놓쳤다';
+      if (!speech) crowd.style.setProperty('--glow', Math.min(1, streak / 8).toFixed(2));
+      phraseEl.querySelectorAll('span')[nt.wi]?.classList.add(pts ? 'on' : 'off');
+    };
+    const t0 = performance.now() + 300;
+    const tap = (e) => {
+      if (e) e.stopPropagation();
+      const now = performance.now() - t0;
+      const cand = notes.filter((nt) => !nt.done && !nt.stop && Math.abs(nt.t - now) <= 420);
+      if (!cand.length) return;
+      cand.sort((x, y) => Math.abs(x.t - now) - Math.abs(y.t - now));
+      judge(cand[0], now - cand[0].t);
+    };
+    box.onclick = tap;
+    const key = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); } };
+    window.addEventListener('keydown', key);
+    await new Promise((res) => {
+      const loop = () => {
+        const now = performance.now() - t0;
+        // show the current line big in the middle, word by word
+        const cur = notes.find((nt) => !nt.done && nt.t - now < travel * 0.55) || notes[notes.length - 1];
+        if (cur && cur.li !== lineShown) {
+          lineShown = cur.li;
+          const ln = c.lines[cur.li];
+          phraseEl.innerHTML = ln.text.split(/\s+/).filter(Boolean).map((w) => `<span>${w}</span>`).join(' ');
+          if (ln.img && BG[ln.img]) { $('rhMemImg').src = BG[ln.img]; mem.hidden = false; mem.classList.remove('pop'); void mem.offsetWidth; mem.classList.add('pop'); }
+          else mem.hidden = true;
+        }
+        notes.forEach((nt) => {
+          if (nt.done && !nt.el.classList.contains('miss')) { nt.el.style.opacity = '0'; return; }
+          const x = hitX + ((nt.t - now) / travel) * (100 - hitX);
+          nt.el.style.left = x + '%';
+          if (nt.stop && now >= nt.t - 120) { stopped = true; }
+          if (!nt.done && !nt.stop && now - nt.t > 420) judge(nt, 999);
+        });
+        $('rhInfo').textContent = speech ? '' : `대열 ${crowdLv}줄 · 연속 ${streak}`;
+        if (stopped) { res(); return; }
+        if (now > notes[notes.length - 1].t + 700) { res(); return; }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+    box.onclick = null;
+    window.removeEventListener('keydown', key);
+    const total = notes.filter((nt) => !nt.stop).length * 2;
+    const ratio = total ? score / total : 0;
+    if (c.game && c.game !== '-') {
+      const grade = ratio >= 0.85 ? 'S' : ratio >= 0.65 ? 'A' : ratio >= 0.4 ? 'B' : 'C';
+      recordGrade(c.game, grade);
+      S.vars[c.game + '점수'] = Math.round(ratio * 100);
+      msg.textContent = `구호 ${hits}번을 함께 외쳤다 · 등급 ${grade} · 화면을 눌러 계속`;
+    } else if (stopped) {
+      notes.forEach((nt) => { if (nt.stop) nt.el.classList.add('miss'); });
+      msg.textContent = '"배불리…" 그 말이, 목에서 나오지 않는다 · 화면을 눌러 계속';
+    } else {
+      msg.textContent = '화면을 눌러 계속';
+    }
+    await sleep(500);
+    await waitBoxTap(box);
+    box.hidden = true;
+    mem.hidden = true;
+  }
+
+  /* ---------- finale: the five broken beliefs gather into one new card ---------- */
+  async function hopeCard() {
+    $('dialog').hidden = true;
+    hideTip();
+    hideSprite('모두');
+    const box = $('hope');
+    const row = $('hpRow');
+    row.innerHTML = CARDS.map((cd, k) => `<img alt="" style="--k:${k}" src="${cardSrc(cd.id, S.cards[cd.id] === 'normal' ? 'normal' : 'broken')}">`).join('');
+    $('hpCard').hidden = true;
+    $('hpText').textContent = '';
+    box.classList.remove('gather');
+    box.hidden = false;
+    await sleep(1600);
+    box.classList.add('gather');
+    await sleep(1500);
+    $('hpCard').hidden = false;
+    $('hpText').textContent = '원래 그런 세상은 없다. 그러니 우리가 바꿀 수 있다.';
+    S.flags.add('희망카드');
+    await sleep(900);
+    await waitBoxTap(box);
     box.hidden = true;
   }
 
@@ -2156,8 +2409,8 @@
     $('dialog').hidden = true;
     hideSprite('모두');
     save(pc);
-    $('esCard').src = cardSrc(card.id, S.cards[card.id]);
-    $('esKicker').textContent = `${num}화 끝`;
+    $('esCard').src = cardName === '희망' ? 'assets/card/card_hope.webp' : cardSrc(card.id, S.cards[card.id]);
+    $('esKicker').textContent = cardName === '희망' ? '6화 끝 · 마지막 이야기' : `${num}화 끝`;
     $('esTitle').textContent = title || '';
     $('esAsk').textContent = ask || '';
     $('esNextBox').hidden = !nextTitle;
@@ -2325,6 +2578,19 @@
         return;
       }
       case 'rebut': return rebutGame(c);
+      case 'manifesto': return rebutGame(c, 'manifesto');
+      case 'rhythm': return rhythmGame(c);
+      case 'hub': return hub(c.arg, id);
+      case 'hopecard': return hopeCard();
+      case 'gradevar': {
+        const [game, k, cuts] = c.arg.split('|').map((x) => x.trim());
+        const [a, b2, d] = (cuts || '3 2 1').split(/\s+/).map(Number);
+        const v = S.vars[k] || 0;
+        const grade = v >= a ? 'S' : v >= b2 ? 'A' : v >= d ? 'B' : 'C';
+        recordGrade(game, grade);
+        toast(`${game} · 등급 ${grade}`);
+        return sleep(600);
+      }
       case 'waver': return waver(c.arg);
       case 'get': {
         const name = c.arg.trim();
@@ -2449,7 +2715,7 @@
   }
 
   async function boot() {
-    prog = parse([window.STORY_STAGE1, window.STORY_STAGE2, window.STORY_STAGE3, window.STORY_STAGE4].filter(Boolean).join('\n'));
+    prog = parse([1, 2, 3, 4, 5, 6].map((n) => window['STORY_STAGE' + n]).filter(Boolean).join('\n'));
     buildTermRe();
     buildStatChips();
     S = newState();
@@ -2465,6 +2731,7 @@
       'assets/minigame/mg_exam_paper.webp', 'assets/minigame/mg_stamp_o.webp', 'assets/minigame/mg_stamp_x.webp',
       'assets/minigame/mg_timer.webp', 'assets/minigame/mg_sack.webp', 'assets/minigame/mg_jige.webp',
       'assets/minigame/mg_measure.webp', 'assets/minigame/mg_ricebundle.webp',
+      'assets/minigame/mg_abacus.webp', 'assets/minigame/mg_crowd.webp', 'assets/card/card_hope.webp', PERK_ICON,
     ];
     await preload(list, (p) => {
       $('ldFill').style.width = Math.round(p * 100) + '%';

@@ -1,0 +1,5 @@
+Use your built-in image generation ($imagegen) to create exactly ONE image, then save it as ./cg_censor.png in the current directory. Wide landscape (16:9) orientation, highest quality. Do not write code or create any other files. If reference images are attached, follow the instructions about them closely.
+
+Image prompt:
+Style: Korean webtoon-style 2D illustration set in 1929 Gwangju, Korea under Japanese colonial rule. Clean confident line art, soft cel shading, muted faded palette of sepia, warm browns and deep indigo, subtle aged-paper texture. Not photorealistic. Absolutely no text, letters, numbers, signs or writing anywhere in the image.
+Event illustration (game CG), close-up top-down view of a printed 1929 newspaper page on a desk. Large parts of the article columns have been censored: printed as solid black bars and empty white blocks where text was removed by the colonial censors, only a few gray blurred lines remain. A hand in a brown suit sleeve presses the page down in frustration. Dramatic lamp light. Absolutely no readable characters anywhere.
