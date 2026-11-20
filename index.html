@@ -154,13 +154,21 @@
   <div class="overlay rebut" id="rebut" hidden>
     <img class="mg-bg rb-bg" src="assets/bg/bg_desk.webp" alt="">
     <div class="ch-head"><b>연설문 속 거짓 찾기</b><span id="rbInfo"></span></div>
-    <div class="rb-paper">
-      <p class="rb-kicker">마쓰다 교관이 써 준 연설문</p>
-      <div class="rb-linebox"><p class="rb-line" id="rbLine"></p><img class="rb-stamp" id="rbStamp" src="assets/minigame/mg_stamp_x.webp" alt="거짓" hidden></div>
-      <p class="rb-res" id="rbRes"></p>
-      <p class="rb-tap" id="rbTap" hidden>화면을 눌러 계속</p>
+    <div class="rb-wrap">
+      <div class="rb-paper">
+        <p class="rb-kicker">마쓰다 교관이 써 준 연설문</p>
+        <ol class="rb-list" id="rbList"></ol>
+        <p class="rb-res" id="rbRes"></p>
+        <p class="rb-tap" id="rbTap" hidden>화면을 눌러 계속</p>
+      </div>
+      <div class="rb-hand" id="rbHand"></div>
     </div>
-    <div class="rb-hand" id="rbHand"></div>
+    <div class="rb-evidence" id="rbEvidence" hidden>
+      <p class="rb-ev-kicker">윤재가 직접 겪은 일 · 증거</p>
+      <div class="rb-ev-imgs" id="rbEvImgs"></div>
+      <p class="rb-ev-why" id="rbEvWhy"></p>
+      <p class="rb-ev-tap">화면을 눌러 계속</p>
+    </div>
     <div class="ins-brief" id="rbBrief" hidden>
       <div class="note-panel brief-panel">
         <div class="note-body">
@@ -168,9 +176,9 @@
           <h2 class="note-title">내가 겪은 일로 뒤집어라</h2>
           <p class="fi-text">마쓰다 교관이 써 준 연설문. 문장마다 윤재가 직접 겪은 일과 맞지 않는 곳이 있다.</p>
           <ol class="brief-steps">
-            <li>위에 연설문 문장이 하나씩 나온다</li>
-            <li>아래 <b>기억 카드</b> 중에서 그 문장을 뒤집을 기억을 고른다</li>
-            <li>한 번에 맞히면 ★ 하나. 틀려도 다시 고를 수 있고, 그때는 맞는 카드가 빛난다</li>
+            <li>가운데 연설문에서 <b>노랗게 표시된 문장</b>을 따진다. 문장과 카드 순서는 매번 섞인다</li>
+            <li>아래 <b>기억 카드</b> 중에서 그 문장을 뒤집을 증거를 고른다. 진짜 기억이지만 증거가 아닌 카드도 있다</li>
+            <li>카드가 <b>두 장</b> 필요한 문장도 있다. 한 번에 맞히면 ★, 두 번 틀리면 맞는 카드가 빛난다</li>
           </ol>
           <button class="btn fi-go" id="btnRbStart" type="button">시작</button>
         </div>

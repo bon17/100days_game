@@ -156,14 +156,17 @@
         }
         if (name === 'rebut') {
           // M id | 이름 | 배경 그림 | 설명      (memory card)
-          // L 문장 | 정답 id (여러 개면 띄어 쓰기) | 해설
+          // L 문장 | 정답 id (띄어 쓰면 그중 하나, '+'로 이으면 모두) | 해설
           const mems = [];
           const sents = [];
           while (++i < lines.length && lines[i].trim() !== '@endrebut') {
             const l = lines[i].trim();
             const [a, b, c2, d] = l.slice(2).split('|').map((x) => x.trim());
             if (l.startsWith('M ')) mems.push({ id: a, name: b || a, img: c2 || '', desc: d || '' });
-            else if (l.startsWith('L ')) sents.push({ text: a, ok: (b || '').split(/\s+/).filter(Boolean), why: c2 || '' });
+            else if (l.startsWith('L ')) {
+              const all = (b || '').includes('+');   // '화물칸+쌀장부' = both cards needed, '일당 순위표' = either one
+              sents.push({ text: a, ok: (b || '').split(all ? '+' : /\s+/).map((x) => x.trim()).filter(Boolean), all, why: c2 || '' });
+            }
           }
           cmds.push({ type: 'rebut', title: arg, mems, sents });
           continue;
@@ -1989,69 +1992,94 @@
     hideTip();
     const box = $('rebut');
     const hand = $('rbHand');
-    const lineEl = $('rbLine');
+    const list = $('rbList');
     const res = $('rbRes');
-    const stamp = $('rbStamp');
+    const ev = $('rbEvidence');
     hand.textContent = '';
-    lineEl.textContent = '';
+    list.textContent = '';
     res.textContent = '';
-    stamp.hidden = true;
+    ev.hidden = true;
+    $('rbTap').hidden = true;
     $('rbInfo').textContent = '';
     box.hidden = false;
     await briefing('rbBrief', 'btnRbStart');
-    const cards = c.mems.map((m) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'rb-card';
-      b.innerHTML = `<img alt="" src="${BG[m.img] || ''}"><b>${m.name}</b><small>${m.desc}</small>`;
-      hand.appendChild(b);
-      return b;
+    const shuffle = (arr) => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    };
+    const mems = shuffle(c.mems);
+    const sents = shuffle(c.sents);
+    // the whole speech stays on the page; the sentence being checked is highlighted
+    const lis = sents.map((sent) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${sent.text}</span>`;
+      list.appendChild(li);
+      return li;
+    });
+    const cards = mems.map((m) => {
+      const b2 = document.createElement('button');
+      b2.type = 'button';
+      b2.className = 'rb-card';
+      b2.innerHTML = `<img alt="" src="${BG[m.img] || ''}"><b>${m.name}</b><small>${m.desc}</small>`;
+      hand.appendChild(b2);
+      return b2;
     });
     let first = 0;
-    for (let i = 0; i < c.sents.length; i++) {
-      const sent = c.sents[i];
-      $('rbInfo').textContent = `${i + 1} / ${c.sents.length} · ★ ${first}`;
-      stamp.hidden = true;
-      lineEl.classList.remove('struck');
-      res.textContent = '이 문장을 뒤집을 윤재의 기억을 아래에서 고르세요';
+    for (let i = 0; i < sents.length; i++) {
+      const sent = sents[i];
+      const li = lis[i];
+      lis.forEach((l) => l.classList.remove('cur'));
+      li.classList.add('cur');
+      $('rbInfo').textContent = `${i + 1} / ${sents.length} · ★ ${first}`;
+      cards.forEach((b2) => b2.classList.remove('hint', 'wrong', 'picked'));
+      const picked = new Set();
+      const need = sent.all ? sent.ok.length : 1;
+      let misses = 0;
       res.className = 'rb-res';
-      cards.forEach((b) => b.classList.remove('hint', 'wrong', 'right'));
-      await typeRich(lineEl, `“${sent.text}”`, 22);
-      let tries = 0;
-      for (;;) {
-        const k = await new Promise((r) => cards.forEach((b, j) => { b.onclick = (e) => { e.stopPropagation(); r(j); }; }));
-        cards.forEach((b) => { b.onclick = null; });
-        tries += 1;
-        if (sent.ok.includes(c.mems[k].id)) {
-          if (tries === 1) first += 1;
+      res.textContent = need > 1 ? `이 문장은 증거가 ${need}장 필요해요. 기억 카드를 ${need}장 고르세요.` : '이 문장을 뒤집을 윤재의 기억을 아래에서 고르세요.';
+      while (picked.size < need) {
+        const k = await new Promise((r) => cards.forEach((b2, j) => { b2.onclick = (e) => { e.stopPropagation(); r(j); }; }));
+        cards.forEach((b2) => { b2.onclick = null; });
+        const id = mems[k].id;
+        if (picked.has(id)) continue;
+        if (sent.ok.includes(id)) {
+          picked.add(id);
           cards[k].classList.remove('hint');
-          cards[k].classList.add('right', 'used');
-          lineEl.classList.add('struck');
-          stamp.hidden = false;
-          res.className = 'rb-res ok';
-          res.textContent = sent.why;
-          break;
+          cards[k].classList.add('picked');
+          if (picked.size < need) { res.textContent = `맞아요! 하나 더 골라야 해요. (${picked.size} / ${need})`; }
+          continue;
         }
+        misses += 1;
         cards[k].classList.remove('wrong'); void cards[k].offsetWidth; cards[k].classList.add('wrong');
-        res.className = 'rb-res';
-        res.textContent = '그 기억으로는 이 문장을 뒤집기 어려워요. 다시 골라 보세요. 빛나는 카드가 힌트예요.';
-        c.mems.forEach((m, j) => { if (sent.ok.includes(m.id)) cards[j].classList.add('hint'); });
+        res.textContent = misses >= 2
+          ? '그 기억으로는 이 문장을 뒤집기 어려워요. 빛나는 카드가 힌트예요.'
+          : '그 기억은 이 문장을 뒤집는 증거가 아니에요. 다시 골라 보세요.';
+        if (misses >= 2) mems.forEach((m, j) => { if (sent.ok.includes(m.id) && !picked.has(m.id)) cards[j].classList.add('hint'); });
       }
-      $('rbInfo').textContent = `${i + 1} / ${c.sents.length} · ★ ${first}`;
+      if (!misses) first += 1;
+      $('rbInfo').textContent = `${i + 1} / ${sents.length} · ★ ${first}`;
+      // evidence: the chosen memories come up large with the explanation
+      await sleep(350);
+      $('rbEvImgs').innerHTML = mems.filter((m) => picked.has(m.id))
+        .map((m) => `<figure><img alt="" src="${BG[m.img] || ''}"><figcaption>${m.name}</figcaption></figure>`).join('');
+      $('rbEvWhy').textContent = sent.why;
+      ev.hidden = false;
       await sleep(500);
-      $('rbTap').hidden = false;
       await waitBoxTap(box);
-      $('rbTap').hidden = true;
+      ev.hidden = true;
+      li.classList.remove('cur');
+      li.classList.add('done');
+      li.insertAdjacentHTML('beforeend', '<img class="rb-x" alt="거짓" src="assets/minigame/mg_stamp_x.webp">');
+      await sleep(250);
     }
-    const n = c.sents.length;
-    const grade = first >= n ? 'S' : first >= n - 1 ? 'A' : first >= Math.ceil(n / 2) ? 'B' : 'C';
+    cards.forEach((b2) => b2.classList.remove('hint', 'wrong', 'picked'));
+    const n = sents.length;
+    const grade = first >= n ? 'S' : first >= n - 2 ? 'A' : first >= Math.ceil(n / 3) ? 'B' : 'C';
     S.vars.거짓찾기 = first;
     recordGrade('거짓찾기', grade);
-    stamp.hidden = true;
-    lineEl.classList.remove('struck');
-    lineEl.textContent = `연설문 ${n}문장을 모두 뒤집었다`;
     res.className = 'rb-res ok';
-    res.textContent = `한 번에 맞힌 문장 ${first}개 · 등급 ${grade}`;
+    res.textContent = `연설문 ${n}문장을 모두 뒤집었다 · 한 번에 맞힌 문장 ${first}개 · 등급 ${grade}`;
     $('rbTap').hidden = false;
     await waitBoxTap(box);
     $('rbTap').hidden = true;
